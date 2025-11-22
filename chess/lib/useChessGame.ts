@@ -8,6 +8,7 @@ export function useChessGame() {
     const [position, setPosition] = useState(chess.fen());
     const [myTurn, setMyTurn] = useState(false);
     const [color, setColor] = useState<'white' | 'black' | null>(null);
+    const [gameOver, setGameOver] = useState(false);
 
 
     function setPlayerColor(color: 'white' | 'black') {
@@ -19,6 +20,7 @@ export function useChessGame() {
         chess.move(move);
         setPosition(chess.fen());
         setMyTurn(true);
+        setGameOver(chess.isGameOver());
     }
 
     function tryMakeMove(from: string, to: string) {
@@ -32,6 +34,7 @@ export function useChessGame() {
 
         setPosition(chess.fen());
         setMyTurn(false);
+        setGameOver(chess.isGameOver());
         return move;
     }
 
@@ -45,6 +48,7 @@ export function useChessGame() {
         position, 
         color,
         myTurn,
+        gameOver,
         setPlayerColor,
         tryMakeMove,
         isMyTurnToMove,

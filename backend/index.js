@@ -50,8 +50,6 @@ io.on("connection", (socket) => {
   // a socket in a room makes a move and emits a make-move 
   // server reacts to it, validates it and sends opponent-move to that room 
   socket.on("make-move", ({roomID, move, color}) => {
-    
-    console.log("Room members:", io.sockets.adapter.rooms.get(roomID));
     const room = rooms.get(roomID);
     if(!room) return;
 

@@ -13,14 +13,13 @@ import {
   addOnPlayerColor, 
   sendMove 
 } from "@/lib/gameClient";
-import { getSocket } from "@/lib/socket";
 
 
 export default function PlayPage() {
 
   const searchParams = useSearchParams();
   const [roomID, setRoomID] = useState<string | null>(null);
-  const [waiting, setWaiting] = useState(false);
+  const [waiting, setWaiting] = useState(true);
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black" | undefined>();
 
   const {
@@ -31,6 +30,7 @@ export default function PlayPage() {
     tryMakeMove,
     isMyTurnToMove,
     applyOpponentMove,
+    gameOver,
   } = useChessGame();
 
   // this is for setting the room id
@@ -45,7 +45,11 @@ export default function PlayPage() {
     
     joinRoom(roomID);
 
-    addOnPlayerColor(setPlayerColor)
+    addOnPlayerColor((color) => {
+      setPlayerColor(color);
+      setBoardOrientation(color);
+    })
+
     addOnOpponentJoined(() => setWaiting(false))
 
     addOnOpponentMove(applyOpponentMove)
@@ -65,6 +69,8 @@ export default function PlayPage() {
   }: PieceDropHandlerArgs) {
 
     if (!isMyTurnToMove()) return false;
+    if(waiting) return false;
+
     const move = tryMakeMove(sourceSquare, targetSquare ? targetSquare : "a1");
     if (!move) return false;
 
@@ -85,8 +91,10 @@ export default function PlayPage() {
     },
     boardOrientation,
   };
-
-  const inviteLink = `http://localhost:3000/play?room=${roomID}`;
+  const host = typeof window !== "undefined"
+            ? window.location.hostname
+            : "localhost";
+  const inviteLink = `http://${host}:3000/play?room=${roomID}`;
 
   // render the chessboard
 
@@ -97,12 +105,13 @@ export default function PlayPage() {
         {color && <p>You are playing as {color}</p>}
         <p>{myTurn ? "Your turn" : "Opponent's turn"}</p>
 
-        {color === "white" && !waiting ? (
+        {color === "white" && waiting ? (
           <p>Send this link to your opponent: <br /><code>{inviteLink}</code></p>
         ) : null}
+        {gameOver ? <h2>Game Over</h2> : null}
       </div>
       <div>
-        <Chessboard options={chessboardOptions} />;
+        <Chessboard options={chessboardOptions} />
       </div>
     </>
   );
