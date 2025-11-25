@@ -3,7 +3,7 @@ import {createServer} from 'http';
 
 
 const httpserver = createServer();
-const PORT = 3010;
+const PORT = process.env.PORT;
 
 const io = new Server(httpserver, {
   cors: {
