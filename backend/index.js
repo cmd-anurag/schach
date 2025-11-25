@@ -1,9 +1,9 @@
 import { Server } from "socket.io";
 import {createServer} from 'http';
-import {authMiddleware} from "./socket/auth";
-import {registerMatchmakingHandlers} from "./socket/matchmaking";
-import {registerGameplayHandlers} from "./socket/gameplay";
-import {registerDisconnectHandlers} from "./socket/disconnect";
+import {authMiddleware} from "./socket/auth.js";
+import {registerMatchmakingHandlers} from "./socket/matchmaking.js";
+import {registerGameplayHandlers} from "./socket/gameplay.js";
+import {registerDisconnectHandlers} from "./socket/disconnect.js";
 
 
 const httpserver = createServer();
