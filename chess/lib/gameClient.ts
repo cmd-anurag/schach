@@ -43,16 +43,16 @@ export function getSocket(): Socket {
 export function cleanupSocket() {
   if (!socket) return;
   socket.removeAllListeners();
-  try { socket.disconnect(); } catch(e) {}
+  try { socket.disconnect(); } catch (e) { }
   socket = null;
   currentToken = null;
 }
 
 /* --- Matchmaking API --- */
-export function sendChallenge(toUsername: string, color: "white"|"black"|"random") {
+export function sendChallenge(toUsername: string, color: "white" | "black" | "random") {
   getSocket().emit("challenge-user", { toUsername, color });
 }
-export function acceptChallenge(fromUsername: string, color: "white"|"black"|"random") {
+export function acceptChallenge(fromUsername: string, color: "white" | "black" | "random") {
   getSocket().emit("accept-challenge", { fromUsername, color });
 }
 export function rejectChallenge(fromUsername: string) {
@@ -68,13 +68,13 @@ export function sendMove(roomID: string, move: Move) {
 }
 
 /* --- Listener registration helpers (they just attach listeners) --- */
-export function onIncomingChallenge(cb: (payload: any)=>void) { getSocket().on("incoming-challenge", cb); }
-export function onChallengeAccepted(cb: (payload: any)=>void) { getSocket().on("challenge-accepted", cb); }
-export function onChallengeRejected(cb: (p:any)=>void) { getSocket().on("challenge-rejected", cb); }
-export function onOnlineUsers(cb: (list:string[])=>void) { getSocket().on("online-users", cb); }
+export function onIncomingChallenge(cb: (payload: any) => void) { getSocket().on("incoming-challenge", cb); }
+export function onChallengeAccepted(cb: (payload: any) => void) { getSocket().on("challenge-accepted", cb); }
+export function onChallengeRejected(cb: (p: any) => void) { getSocket().on("challenge-rejected", cb); }
+export function onOnlineUsers(cb: (list: string[]) => void) { getSocket().on("online-users", cb); }
 
-export function onPlayerColor(cb:(color:"white"|"black")=>void) { getSocket().on("player-color", cb); }
-export function onOpponentMove(cb:(move:any)=>void) { getSocket().on("opponent-move", cb); }
-export function onMoveHistory(cb:(payload:{moves:any[]})=>void) { getSocket().on("move-history", cb); }
-export function onRoomState(cb:(state:any)=>void) { getSocket().on("room-state", cb); }
-export function onOpponentLeft(cb:(p:any)=>void) { getSocket().on("opponent-left", cb); }
+export function onPlayerColor(cb: (color: "white" | "black") => void) { getSocket().on("player-color", cb); }
+export function onOpponentMove(cb: (move: any) => void) { getSocket().on("opponent-move", cb); }
+export function onMoveHistory(cb: (payload: { moves: any[] }) => void) { getSocket().on("move-history", cb); }
+export function onRoomState(cb: (state: any) => void) { getSocket().on("room-state", cb); }
+export function onOpponentLeft(cb: (p: any) => void) { getSocket().on("opponent-left", cb); }

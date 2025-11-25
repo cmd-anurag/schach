@@ -17,6 +17,7 @@ import {
 
 import { getToken } from "@/lib/auth";
 import { useChessGame } from "@/lib/useChessGame";
+import { Move } from "chess.js";
 
 export default function PlayPage() {
   const router = useRouter();
@@ -27,17 +28,15 @@ export default function PlayPage() {
   const [waiting, setWaiting] = useState(true);
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black" | undefined>();
 
+
   const {
     position,
     color,
-    myTurn,
+    gameOver,
     setPlayerColor,
     tryMakeMove,
     isMyTurnToMove,
     applyOpponentMove,
-    gameOver,
-    // optional, but we call if available:
-    // @ts-ignore
     loadMoveHistory,
   } = useChessGame();
 
@@ -80,21 +79,13 @@ export default function PlayPage() {
       setBoardOrientation(c);
     };
     const opponentJoinedHandler = () => setWaiting(false);
-    const opponentMoveHandler = (move: any) => applyOpponentMove(move);
-    const moveHistoryHandler = ({ moves }: { moves: any[] }) => {
-      if (typeof loadMoveHistory === "function") {
-        try {
-          loadMoveHistory(moves);
-        } catch (err) {
-          console.error("loadMoveHistory threw:", err);
-        }
-      } else {
-        console.warn("Received move-history but useChessGame has no loadMoveHistory().");
-      }
-    };
+    const opponentMoveHandler = (move: Move) => applyOpponentMove(move);
+    const moveHistoryHandler = ({ moves }: { moves: Move[] }) => loadMoveHistory(moves);
+
     const roomStateHandler = (state: any) => {
       if (state.whiteConnected && state.blackConnected) setWaiting(false);
     };
+
     const opponentLeftHandler = () => {
       alert("Opponent left the match.");
       setWaiting(true);
@@ -118,7 +109,6 @@ export default function PlayPage() {
       // For simplicity and safety we call cleanupSocket() to fully clean up when leaving the page.
       cleanupSocket();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomID]);
 
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
@@ -160,7 +150,7 @@ export default function PlayPage() {
         <p>
           {waiting
             ? "Waiting for opponent..."
-            : myTurn
+            : isMyTurnToMove()
               ? "Your turn"
               : "Opponent's turn"}
         </p>

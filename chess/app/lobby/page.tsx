@@ -56,9 +56,6 @@ export default function LobbyPage() {
     socket.on("challenge-accepted", acceptedHandler);
     socket.on("challenge-rejected", rejectedHandler);
 
-    // request current online list if server supports it
-    // otherwise rely on server pushing online-users on connect
-    socket.emit("request-online-users");
 
     setLoading(false);
 
