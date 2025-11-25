@@ -1,35 +1,80 @@
-import {getSocket} from "@/lib/socket"
+"use client";
+
 import { Move } from "chess.js";
+import { io, Socket } from "socket.io-client";
 
-const socket = getSocket();
 
-export function joinRoom(roomId: string) {
-    socket.emit("join-room", roomId);
+let socket: Socket | null = null;
+let currentToken: string | null = null;
+
+function createSocket(token: string) {
+  return io(process.env.NEXT_PUBLIC_SOCKET_URL || "wss://schach.onrender.com", {
+    auth: { token },
+    transports: ["websocket"],
+    autoConnect: true,
+  });
 }
 
-export function sendMove(roomID: string, move: Move, color: "white" | "black") {
-    socket.emit("make-move", {roomID, move, color});
+export function initSocket(token: string) {
+  // If token changed, fully recreate socket
+  if (socket && currentToken === token) return socket;
+
+  cleanupSocket(); // remove existing
+
+  currentToken = token;
+  socket = createSocket(token);
+
+  socket.on("connect_error", (err) => {
+    console.error("socket connect_error", err.message || err);
+  });
+
+  socket.on("connect", () => {
+    console.log("socket connected", socket?.id);
+  });
+
+  return socket;
 }
 
-export function addOnPlayerColor(callBack: (color: "white" | "black") => void) {
-    socket.on("player-color", callBack);
+export function getSocket(): Socket {
+  if (!socket) throw new Error("Socket not initialized. call initSocket(token) first.");
+  return socket;
 }
 
-export function addOnOpponentJoined(callback: () => void) {
-    socket.on("opponent-joined", callback);
+export function cleanupSocket() {
+  if (!socket) return;
+  socket.removeAllListeners();
+  try { socket.disconnect(); } catch(e) {}
+  socket = null;
+  currentToken = null;
 }
 
-export function addOnOpponentLeft(callback: () => void) {
-    socket.on("opponent-left", callback);
+/* --- Matchmaking API --- */
+export function sendChallenge(toUsername: string, color: "white"|"black"|"random") {
+  getSocket().emit("challenge-user", { toUsername, color });
+}
+export function acceptChallenge(fromUsername: string, color: "white"|"black"|"random") {
+  getSocket().emit("accept-challenge", { fromUsername, color });
+}
+export function rejectChallenge(fromUsername: string) {
+  getSocket().emit("reject-challenge", { fromUsername });
 }
 
-export function addOnOpponentMove(callback: (move: Move) => void) {
-  socket.on("opponent-move", callback);
+/* --- Gameplay API --- */
+export function joinRoom(roomID: string) {
+  getSocket().emit("join-room", roomID);
+}
+export function sendMove(roomID: string, move: Move) {
+  getSocket().emit("make-move", { roomID, move });
 }
 
-export function cleanupSocketListeners() {
-  socket.off("player-color");
-  socket.off("opponent-joined");
-  socket.off("opponent-move");
-  socket.off("opponent-left");
-}
+/* --- Listener registration helpers (they just attach listeners) --- */
+export function onIncomingChallenge(cb: (payload: any)=>void) { getSocket().on("incoming-challenge", cb); }
+export function onChallengeAccepted(cb: (payload: any)=>void) { getSocket().on("challenge-accepted", cb); }
+export function onChallengeRejected(cb: (p:any)=>void) { getSocket().on("challenge-rejected", cb); }
+export function onOnlineUsers(cb: (list:string[])=>void) { getSocket().on("online-users", cb); }
+
+export function onPlayerColor(cb:(color:"white"|"black")=>void) { getSocket().on("player-color", cb); }
+export function onOpponentMove(cb:(move:any)=>void) { getSocket().on("opponent-move", cb); }
+export function onMoveHistory(cb:(payload:{moves:any[]})=>void) { getSocket().on("move-history", cb); }
+export function onRoomState(cb:(state:any)=>void) { getSocket().on("room-state", cb); }
+export function onOpponentLeft(cb:(p:any)=>void) { getSocket().on("opponent-left", cb); }

@@ -1,24 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useChessGame } from "@/lib/useChessGame";
 import { Chessboard, type PieceDropHandlerArgs } from "react-chessboard";
-import { useSearchParams } from "next/navigation";
-import { 
-  cleanupSocketListeners, 
-  joinRoom, 
-  addOnOpponentJoined, 
-  addOnOpponentLeft, 
-  addOnOpponentMove, 
-  addOnPlayerColor, 
-  sendMove 
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  initSocket,
+  sendMove,
+  joinRoom,
+  onPlayerColor,
+  onOpponentMove,
+  onMoveHistory,
+  onRoomState,
+  onOpponentLeft,
+  cleanupSocket,
 } from "@/lib/gameClient";
 
+import { getToken } from "@/lib/auth";
+import { useChessGame } from "@/lib/useChessGame";
 
 export default function PlayPage() {
-
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [roomID, setRoomID] = useState<string | null>(null);
+
+  const roomID = searchParams.get("room");
+
   const [waiting, setWaiting] = useState(true);
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black" | undefined>();
 
@@ -31,57 +36,103 @@ export default function PlayPage() {
     isMyTurnToMove,
     applyOpponentMove,
     gameOver,
+    // optional, but we call if available:
+    // @ts-ignore
+    loadMoveHistory,
   } = useChessGame();
 
-  // this is for setting the room id
+  //
+  // PRE-FLIGHT VALIDATION
+  //
   useEffect(() => {
-    const id = searchParams.get("room") || Math.random().toString(36).substring(2, 8);
-    setRoomID(id);
-  }, [searchParams]);
+    if (!roomID) {
+      // strict: no room param means no game
+      router.replace("/lobby");
+      return;
+    }
 
-  // this adds the socket listeners
+    const token = getToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      initSocket(token);
+    } catch (err) {
+      console.error("Failed to initialize socket:", err);
+      router.replace("/login");
+      return;
+    }
+  }, [roomID, router]);
+
+  //
+  // SOCKET + GAME INIT
+  //
   useEffect(() => {
     if (!roomID) return;
-    
+
+    // join the server-side room (server will check auth)
     joinRoom(roomID);
 
-    addOnPlayerColor((color) => {
-      setPlayerColor(color);
-      setBoardOrientation(color);
-    })
+    const playerColorHandler = (c: "white" | "black") => {
+      setPlayerColor(c);
+      setBoardOrientation(c);
+    };
+    const opponentJoinedHandler = () => setWaiting(false);
+    const opponentMoveHandler = (move: any) => applyOpponentMove(move);
+    const moveHistoryHandler = ({ moves }: { moves: any[] }) => {
+      if (typeof loadMoveHistory === "function") {
+        try {
+          loadMoveHistory(moves);
+        } catch (err) {
+          console.error("loadMoveHistory threw:", err);
+        }
+      } else {
+        console.warn("Received move-history but useChessGame has no loadMoveHistory().");
+      }
+    };
+    const roomStateHandler = (state: any) => {
+      if (state.whiteConnected && state.blackConnected) setWaiting(false);
+    };
+    const opponentLeftHandler = () => {
+      alert("Opponent left the match.");
+      setWaiting(true);
+    };
 
-    addOnOpponentJoined(() => setWaiting(false))
+    // register listeners (use gameClient "on..." helpers)
+    onPlayerColor(playerColorHandler);
+    // server also emits an 'opponent-joined' event in gameplay — handle it via roomState or you can listen directly:
+    // if server emits 'opponent-joined', you can also do: getSocket().on('opponent-joined', opponentJoinedHandler)
+    onOpponentMove(opponentMoveHandler);
+    onMoveHistory(moveHistoryHandler);
+    onRoomState(roomStateHandler);
+    onOpponentLeft(opponentLeftHandler);
 
-    addOnOpponentMove(applyOpponentMove)
+    // If the server doesn't explicitly send "opponent-joined", we rely on roomState to detect both connected.
 
-    addOnOpponentLeft(() => {
-      alert("opponent left");
-    })
-
-    return () => cleanupSocketListeners();
-
+    return () => {
+      // remove listeners and optionally disconnect socket if you want
+      // cleanupSocket() disconnects entire socket and removes all listeners;
+      // if you want to only remove the listeners added here, you'd need an "off" API in gameClient.
+      // For simplicity and safety we call cleanupSocket() to fully clean up when leaving the page.
+      cleanupSocket();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomID]);
 
-  // piece drop function
-  function onPieceDrop({
-    sourceSquare,
-    targetSquare
-  }: PieceDropHandlerArgs) {
-
+  function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
+    if (waiting) return false;
     if (!isMyTurnToMove()) return false;
-    if(waiting) return false;
 
-    const move = tryMakeMove(sourceSquare, targetSquare ? targetSquare : "a1");
+    const move = tryMakeMove(sourceSquare, targetSquare!);
     if (!move) return false;
 
-    if (roomID) {
-      sendMove(roomID, move, color!);
-    }
-    return true;
+    sendMove(roomID!, move);
 
+    return true;
   }
 
- // chessboard options
   const chessboardOptions = {
     position,
     onPieceDrop,
@@ -91,26 +142,32 @@ export default function PlayPage() {
     },
     boardOrientation,
   };
-  const host = typeof window !== "undefined"
-            ? window.location.hostname
-            : "localhost";
-  const inviteLink = `http://${host}:3000/play?room=${roomID}`;
 
-  // render the chessboard
+  if (!roomID) {
+    return (
+      <div style={{ padding: 40 }}>
+        <h2>No room specified.</h2>
+        <p>You must join a match via the lobby challenge system.</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <div style={{ textAlign: "center", marginTop: 40 }}>
-        <h2>Room ID: {roomID}</h2>
-        {color && <p>You are playing as {color}</p>}
-        <p>{myTurn ? "Your turn" : "Opponent's turn"}</p>
-
-        {color === "white" && waiting ? (
-          <p>Send this link to your opponent: <br /><code>{inviteLink}</code></p>
-        ) : null}
+        <h2>Room: {roomID}</h2>
+        {color && <p>You are playing as <strong>{color}</strong></p>}
+        <p>
+          {waiting
+            ? "Waiting for opponent..."
+            : myTurn
+              ? "Your turn"
+              : "Opponent's turn"}
+        </p>
         {gameOver ? <h2>Game Over</h2> : null}
       </div>
-      <div>
+
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
         <Chessboard options={chessboardOptions} />
       </div>
     </>
