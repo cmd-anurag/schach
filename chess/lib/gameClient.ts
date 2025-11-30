@@ -1,5 +1,3 @@
-"use client";
-
 import { Move } from "chess.js";
 import { io, Socket } from "socket.io-client";
 
@@ -8,7 +6,7 @@ let socket: Socket | null = null;
 let currentToken: string | null = null;
 
 function createSocket(token: string) {
-  return io(process.env.NEXT_PUBLIC_SOCKET_URL || "wss://schach.onrender.com", {
+  return io(process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:3010", {
     auth: { token },
     transports: ["websocket"],
     autoConnect: true,

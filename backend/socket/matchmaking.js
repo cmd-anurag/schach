@@ -131,4 +131,9 @@ export function registerMatchmakingHandlers(io, socket, onlineUsers, rooms) {
 
     console.log(`Challenge rejected: ${username} → ${fromUsername}`);
   });
+
+  // get online users
+  socket.on("get-online-users" ,() => {
+    socket.emit('online-users', {users: Array.from(onlineUsers.keys())});
+  })
 }

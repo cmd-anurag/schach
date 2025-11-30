@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { saveToken } from "@/lib/auth";
-import { getSocket, initSocket } from "@/lib/gameClient";
+import { saveToken, saveUsername } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -28,9 +27,8 @@ export default function LoginPage() {
     }
 
     saveToken(data.token);
-
+    saveUsername(username);
     // initialize socket
-    initSocket(data.token);
 
     router.push("/lobby");
   }

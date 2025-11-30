@@ -7,7 +7,7 @@ import {registerDisconnectHandlers} from "./socket/disconnect.js";
 
 
 const httpserver = createServer();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3010;
 
 const io = new Server(httpserver, {
   cors: {
@@ -24,7 +24,7 @@ io.on("connection", (socket) => {
   console.log(`Player connected ${socket.id} username: ${socket.data.user?.username}`);
   const username = socket.data.user.username;
   onlineUsers.set(username, socket.id);
-  io.emit("online-users", Array.from(onlineUsers.keys()));
+  io.emit("online-users", {users: Array.from(onlineUsers.keys())});
   registerMatchmakingHandlers(io, socket, onlineUsers, rooms);
   registerGameplayHandlers(io, socket, rooms);
   registerDisconnectHandlers(io, socket, rooms, onlineUsers);

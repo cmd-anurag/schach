@@ -12,7 +12,7 @@ import {
   onMoveHistory,
   onRoomState,
   onOpponentLeft,
-  cleanupSocket,
+  getSocket,
 } from "@/lib/gameClient";
 
 import { getToken } from "@/lib/auth";
@@ -103,11 +103,12 @@ export default function PlayPage() {
     // If the server doesn't explicitly send "opponent-joined", we rely on roomState to detect both connected.
 
     return () => {
-      // remove listeners and optionally disconnect socket if you want
-      // cleanupSocket() disconnects entire socket and removes all listeners;
-      // if you want to only remove the listeners added here, you'd need an "off" API in gameClient.
-      // For simplicity and safety we call cleanupSocket() to fully clean up when leaving the page.
-      cleanupSocket();
+      const socket = getSocket();
+      socket.off('player-color', playerColorHandler);
+      socket.off('opponent-move', opponentMoveHandler);
+      socket.off('move-history', moveHistoryHandler);
+      socket.off('room-state', roomStateHandler);
+      socket.off('opponent-left', opponentLeftHandler);
     };
   }, [roomID]);
 
