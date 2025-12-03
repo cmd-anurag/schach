@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv'
 
+dotenv.config();
 // a middleware which runs before "connection event" it verifies whether that connection is logged in
 
 export function authMiddleware(socket, next) {
