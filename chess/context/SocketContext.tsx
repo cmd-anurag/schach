@@ -15,13 +15,13 @@ export const SocketContext = createContext<SocketContextType | null>(null);
 export function SocketProvider({children} : {children: ReactNode}) {
     const { token } = useAuth();
     const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
-    const [isConnected, setisConnected] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         if(!token) {
             socket?.disconnect();
             setSocket(null);
-            setisConnected(false);
+            setIsConnected(false);
             return;
         }
 
@@ -30,8 +30,8 @@ export function SocketProvider({children} : {children: ReactNode}) {
             transports: ['websocket'],
             autoConnect: true,
         });
-        newSocket.on('connect', () => setisConnected(true));
-        newSocket.on('disconnect', () => setisConnected(false));
+        newSocket.on('connect', () => setIsConnected(true));
+        newSocket.on('disconnect', () => setIsConnected(false));
         setSocket(newSocket);
 
         return () => {
