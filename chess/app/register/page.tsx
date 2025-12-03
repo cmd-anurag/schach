@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { saveToken, saveUsername } from "@/lib/auth";
-import { initSocket } from "@/lib/gameClient";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
   const [username, setU] = useState("");
@@ -11,6 +10,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string|null>(null);
 
   const router = useRouter();
+  const {login} = useAuth();
 
   async function handleRegister(e: any) {
     e.preventDefault();
@@ -35,13 +35,9 @@ export default function RegisterPage() {
       body: JSON.stringify({ username, password })
     });
 
-    const login = await loginres.json();
+    const logindata = await loginres.json();
 
-    saveToken(login.token);
-    saveUsername(username);
-    // init socket
-    initSocket(login.token);
-
+    login(logindata.token, username);
     router.push("/lobby");
   }
 

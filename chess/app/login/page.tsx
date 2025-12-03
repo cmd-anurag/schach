@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { saveToken, saveUsername } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const [username, setU] = useState("");
   const [password, setP] = useState("");
   const [error, setError] = useState<string|null>(null);
+
+  const {login} = useAuth();
 
   const router = useRouter();
 
@@ -26,10 +28,7 @@ export default function LoginPage() {
       return;
     }
 
-    saveToken(data.token);
-    saveUsername(username);
-    // initialize socket
-
+    login(data.token, username);
     router.push("/lobby");
   }
 

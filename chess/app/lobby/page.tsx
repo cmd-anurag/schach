@@ -1,51 +1,59 @@
 "use client";
 
-import { getSocket } from "@/lib/socket"
-import { getToken, getUsername } from "@/lib/auth";
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation";
 import OnlineUsers from "@/components/OnlineUsers";
-import { Socket } from "socket.io-client";
-import { ClientToServerEvents, ServerToClientEvents } from "@/types/socketEvents";
+import { useAuth } from "@/hooks/useAuth";
+import { useSocket } from "@/hooks/useSocket";
+
 
 export default function Lobby() {
 
   const router = useRouter();
 
-  const [userName, setUsername] = useState<string | null>(null);
+  const {token, username, isLoading, logout} = useAuth();
+  const {socket} = useSocket();
+
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
-  let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
+  useEffect(() => {
+    if(!isLoading && !token) {
+      router.push('/login');
+    }
+  }, [router, token, isLoading]);
 
   useEffect(() => {
     
-    if(!getToken()) {
-      router.push('/login');
+    if(!socket) {
       return;
     }
 
-    socket = getSocket();
-    const username = getUsername();
-    setUsername(username);
-
-    // TODO
     // event listeners on socket
     const onlineUsersHandler = ({users} : {users: string[]}) => {
       console.log("online users were receiveed");
       setOnlineUsers(users);
     }
     socket?.emit('get-online-users');
-    socket?.on('online-users', onlineUsersHandler)
+    socket?.on('online-users', onlineUsersHandler);
+
     return () => {
       socket?.off("online-users", onlineUsersHandler);
     }
 
-  }, []);
+  }, [socket]);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  }
 
   return (
     <div>
-      <p className="font-bold">You are {userName}</p>
-      <OnlineUsers users={onlineUsers.filter((u) => u !== userName)} />
+      <div className="flex justify-end gap-2 items-center">
+        <p className="font-bold">{username}</p>
+        <button onClick={handleLogout} className="bg-red-500 text-white px-2 py-1 cursor-pointer rounded-lg">Logout</button>
+      </div>
+      <OnlineUsers users={onlineUsers.filter((u) => u !== username)} />
     </div>
   )
 }
