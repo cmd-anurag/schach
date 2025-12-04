@@ -10,7 +10,7 @@ export default function Navbar() {
             <Link href='#'>Play</Link>
             <Link href='/lobby'>Lobby</Link>
             <Link href='#'>About</Link>
-            <Link href='#'>Login</Link>
+            <Link href='/login'>Login</Link>
         </div>
     </div>
   )
