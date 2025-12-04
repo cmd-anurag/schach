@@ -3,11 +3,11 @@ import { Move } from "chess.js"
 type Color = 'white' | 'black' | 'random';
 
 export type ClientToServerEvents = {
-    'challenge-user' : {toUsername: string, color: string},
-    'accept-challenge' : {fromUsername: string, color: string},
-    'reject-challenge' : {fromUsername: string},
-    'join-room' : {roomID: string},
-    'make-move' : {roomID: string, move: Move}
+    'challenge-user' : (payload: {toUsername: string, color: string}) => void,
+    'accept-challenge' : {fromUsername: string, color: string}, // to be changed
+    'reject-challenge' : {fromUsername: string}, // to be changed
+    'join-room' : {roomID: string}, // to be changed
+    'make-move' : {roomID: string, move: Move} // to be changed
     'get-online-users' : () => void,
 }
 

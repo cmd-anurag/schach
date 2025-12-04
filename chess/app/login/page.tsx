@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import {FormEvent, useState} from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   const router = useRouter();
 
-  async function handleLogin(e: any) {
+  async function handleLogin(e: FormEvent) {
     e.preventDefault();
     setProcessing(true);
 
