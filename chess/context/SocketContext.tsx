@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socketEvents";
-import { createContext, ReactNode, useEffect, useRef, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 export interface SocketContextType {
@@ -14,14 +14,13 @@ export const SocketContext = createContext<SocketContextType | null>(null);
 
 export function SocketProvider({children} : {children: ReactNode}) {
     const { token } = useAuth();
-    // const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
-    const socket = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+    const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
         if(!token) {
-            socket.current?.disconnect();
-            socket.current = null;
+            socket?.disconnect();
+            setSocket(null);
             setIsConnected(false);
             return;
         }
@@ -33,7 +32,7 @@ export function SocketProvider({children} : {children: ReactNode}) {
         });
         newSocket.on('connect', () => setIsConnected(true));
         newSocket.on('disconnect', () => setIsConnected(false));
-        socket.current = newSocket;
+        setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
@@ -42,7 +41,7 @@ export function SocketProvider({children} : {children: ReactNode}) {
     }, [token]);
 
     return (
-        <SocketContext.Provider value={{socket: socket.current, isConnected}}>
+        <SocketContext.Provider value={{socket, isConnected}}>
             {children}
         </SocketContext.Provider>
     )
