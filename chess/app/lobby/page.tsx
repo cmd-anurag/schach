@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import OnlineUsers from "@/components/OnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/hooks/useSocket";
+import IsOnline from "@/components/IsOnline";
+import IncomingChallenges from "@/components/IncomingChallenges";
 
 
 export default function Lobby() {
@@ -50,9 +52,11 @@ export default function Lobby() {
   return (
     <div>
       <div className="flex justify-end gap-2 items-center">
+        <IsOnline />
         <p className="font-bold">{username}</p>
         <button onClick={handleLogout} className="bg-red-500 text-white px-2 py-1 cursor-pointer rounded-lg">Logout</button>
       </div>
+      <IncomingChallenges />
       <OnlineUsers users={onlineUsers.filter((u) => u !== username)} />
     </div>
   )
