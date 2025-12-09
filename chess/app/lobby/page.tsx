@@ -52,12 +52,15 @@ export default function Lobby() {
   return (
     <div>
       <div className="flex justify-end gap-2 items-center">
+        <IncomingChallenges />
         <IsOnline />
         <p className="font-bold">{username}</p>
         <button onClick={handleLogout} className="bg-red-500 text-white px-2 py-1 cursor-pointer rounded-lg">Logout</button>
       </div>
-      <IncomingChallenges />
+      <div>
+
       <OnlineUsers users={onlineUsers.filter((u) => u !== username)} />
+      </div>
     </div>
   )
 }

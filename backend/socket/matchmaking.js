@@ -93,6 +93,7 @@ export function registerMatchmakingHandlers(io, socket, onlineUsers, rooms) {
       },
 
       turn: "white",
+      moveHistory: [],
     };
 
     // store
