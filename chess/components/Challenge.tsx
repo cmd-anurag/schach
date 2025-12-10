@@ -1,8 +1,9 @@
 import { Check, X } from "lucide-react"
 import { Button } from "./ui/button"
 import { useSocket } from "@/hooks/useSocket"
+import { ChallengeColor } from "@/types/socketEvents";
 
-export default function Challenge({fromUsername, color, remove} : {fromUsername: string, color: string, remove: () => void}) {
+export default function Challenge({fromUsername, color, remove} : {fromUsername: string, color: ChallengeColor, remove: () => void}) {
   const {socket} = useSocket();
 
   const challengeRejectHandler = () => {

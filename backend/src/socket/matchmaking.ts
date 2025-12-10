@@ -1,11 +1,14 @@
 import { randomBytes } from "crypto";
+import { AppServer, PlayerSocket } from "../types/socketTypes";
+import { Room } from "../types/Game";
+import { Chess } from "chess.js";
 
 /** Generate a random 6-char hex ID like "a3b9d0" */
 function generateRoomID() {
   return randomBytes(3).toString("hex");
 }
 
-export function registerMatchmakingHandlers(io, socket, onlineUsers, rooms) {
+export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>, rooms: Map<string, Room>) {
   const username = socket.data.user.username;
     
   // incoming challenge
@@ -56,20 +59,28 @@ export function registerMatchmakingHandlers(io, socket, onlineUsers, rooms) {
     }
 
     // determine colors
-    let whiteUsername, blackUsername;
+    let whiteUsername: string = fromUsername;
+    let blackUsername: string = accepter;
 
-    if (color === "white") {
-      whiteUsername = fromUsername;
-      blackUsername = accepter;
-    } else if (color === "black") {
-      whiteUsername = accepter;
-      blackUsername = fromUsername;
-    } else {
-      // random
-      const arr = [fromUsername, accepter];
-      arr.sort(() => Math.random() - 0.5);
-      whiteUsername = arr[0];
-      blackUsername = arr[1];
+    switch(color) {
+      case "white":
+        whiteUsername = fromUsername;
+        blackUsername = accepter;
+        break;
+      case "black":
+        whiteUsername = accepter;
+        blackUsername = fromUsername;
+        break;
+      case "random":
+      default:
+        if(Math.random() < 0.5) {
+          whiteUsername = fromUsername;
+          blackUsername = accepter;
+        } else {
+          whiteUsername = accepter;
+          blackUsername = fromUsername;
+        }
+        break;
     }
 
     // unique room ID
@@ -79,21 +90,22 @@ export function registerMatchmakingHandlers(io, socket, onlineUsers, rooms) {
     } while (rooms.has(roomID));
 
     // construct room object
-    const room = {
+    const room: Room = {
       id: roomID,
 
       white: {
         username: whiteUsername,
-        socketId: onlineUsers.get(whiteUsername) || null,
+        socketID: onlineUsers.get(whiteUsername) || null,
       },
 
       black: {
         username: blackUsername,
-        socketId: onlineUsers.get(blackUsername) || null,
+        socketID: onlineUsers.get(blackUsername) || null,
       },
 
       turn: "white",
       moveHistory: [],
+      chessInstance: new Chess(),
     };
 
     // store

@@ -1,30 +1,34 @@
 import { Server } from "socket.io";
 import {createServer} from 'http';
-import {authMiddleware} from "./socket/auth.js";
-import {registerMatchmakingHandlers} from "./socket/matchmaking.js";
-import {registerGameplayHandlers} from "./socket/gameplay.js";
-import {registerDisconnectHandlers} from "./socket/disconnect.js";
+import {authMiddleware} from "./socket/auth";
+import {registerMatchmakingHandlers} from "./socket/matchmaking";
+import {registerGameplayHandlers} from "./socket/gameplay";
+import {registerDisconnectHandlers} from "./socket/disconnect";
 
+import {AppServer, PlayerSocket} from "./types/socketTypes";
+import {Room} from "./types/Game";
 
 const httpserver = createServer();
-const PORT = process.env.PORT || 3010;
+const PORT = Number(process.env.PORT) || 3010;
 
-const io = new Server(httpserver, {
+const io: AppServer = new Server(httpserver, {
   cors: {
     origin: "*",
   },
 });
 
-const rooms = new Map();
-const onlineUsers = new Map();
+const onlineUsers: Map<string, string> = new Map();
+const rooms: Map<string, Room> = new Map();
 
 io.use(authMiddleware);
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: PlayerSocket) => {
+
   console.log(`Player connected ${socket.id} username: ${socket.data.user?.username}`);
   const username = socket.data.user.username;
   onlineUsers.set(username, socket.id);
   io.emit("online-users", {users: Array.from(onlineUsers.keys())});
+
   registerMatchmakingHandlers(io, socket, onlineUsers, rooms);
   registerGameplayHandlers(io, socket, rooms);
   registerDisconnectHandlers(io, socket, rooms, onlineUsers);

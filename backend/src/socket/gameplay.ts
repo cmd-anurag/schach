@@ -1,19 +1,7 @@
-/**
- * socket/gameplay.js
- *
- * Gameplay handlers: join-room, make-move, leave-room
- *
- * Assumes rooms map contains room objects shaped like:
- * {
- *   id,
- *   white: { username, socketId | null },
- *   black: { username, socketId | null },
- *   turn: "white" | "black",
- *   moveHistory?: []  // optional array of moves
- * }
- */
+import { Room } from "../types/Game";
+import { AppServer, PlayerSocket } from "../types/socketTypes";
 
-export function registerGameplayHandlers(io, socket, rooms) {
+export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, rooms: Map<string, Room>) {
   const username = socket.data.user.username;
 
   // handler for client trying to join a room 
@@ -25,13 +13,13 @@ export function registerGameplayHandlers(io, socket, rooms) {
       return;
     }
 
-    let playerColor = null;
+    let playerColor: 'white' | 'black' = 'white';
     if(room.white.username === username) {
       playerColor = 'white';
-      room.white.socketId = socket.id;
+      room.white.socketID = socket.id;
     } else if(room.black.username === username) {
       playerColor = 'black';
-      room.black.socketId = socket.id;
+      room.black.socketID = socket.id;
     }
 
     if(!playerColor) {
@@ -46,10 +34,10 @@ export function registerGameplayHandlers(io, socket, rooms) {
       opponent: playerColor === 'white'? room.black.username : room.white.username,
       turn: room.turn,
       moveHistory: room.moveHistory,
-      opponentConnected: playerColor === 'white'? !!room.black.socketId : !!room.white.socketId,
+      opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
     });
 
-    const opponentSocketId = playerColor === 'white'? room.black.socketId : room.white.socketId;
+    const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
     if(opponentSocketId) {
       io.to(opponentSocketId).emit('opponent-connected');
     }
@@ -87,3 +75,5 @@ export function registerGameplayHandlers(io, socket, rooms) {
     console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
   });
 }
+
+// TODO MIGRATE BACKEND TO TS [DONE] AND ADD A CHESS JS INSTANCE TO EACH ROOM FOR VALIDATION [validation left]

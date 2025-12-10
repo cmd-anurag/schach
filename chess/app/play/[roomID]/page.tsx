@@ -11,7 +11,7 @@ export default function Game() {
     const { socket } = useSocket();
     const { roomID } = useParams<{ roomID: string }>();
 
-    const { position, color, turn, isMyTurn, initializeGame, tryMakeMove, applyMove } = useChessGame();
+    const { position, color, isMyTurn, initializeGame, tryMakeMove, applyMove } = useChessGame();
 
     
     useEffect(() => {
@@ -82,10 +82,12 @@ export default function Game() {
         return true;
     }
 
+    const boardOrientationColor = color? color : "white";
     // set the chessboard options
     const chessboardOptions = {
         position,
         onPieceDrop,
+        boardOrientation: boardOrientationColor,
         id: 'play-vs-random'
     };
 

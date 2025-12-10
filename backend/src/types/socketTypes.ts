@@ -1,4 +1,5 @@
 import { Move } from "chess.js"
+import { Server, Socket } from "socket.io";
 
 export type ChallengeColor = 'white' | 'black' | 'random';
 
@@ -44,3 +45,29 @@ export type ServerToClientEvents = {
     'move-error' : (payload: {message: string}) => void,
     'challenge-error' : (payload: {message: string}) => void,
 }
+
+export interface InterServerEvents {}
+
+
+export interface SocketData {
+    user: {
+        id: string,
+        username: string;
+    };
+}
+
+// the type of whole Server
+export type AppServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
+// A single player's socket connection
+export type PlayerSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
