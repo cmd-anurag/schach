@@ -58,7 +58,7 @@ export function useChessGame() {
       }
       if (!move) return null;
 
-      // local update for our own move
+      // local update for my own move
       setPosition(game.fen());
       setTurn(color === 'white' ? 'black' : 'white');
 

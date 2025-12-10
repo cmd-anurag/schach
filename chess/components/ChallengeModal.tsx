@@ -12,11 +12,12 @@ import {
 
 import { Tabs, TabsTrigger, TabsList } from "@/components/ui/tabs"
 import { useSocket } from "@/hooks/useSocket";
+import { ChallengeColor } from "@/types/socketEvents";
 import { useState } from "react"
 import { toast } from "sonner"
 
 export default function ChallengeModal({ toUsername }: { toUsername: string }) {
-  const [prefColor, setPrefColor] = useState('random');
+  const [prefColor, setPrefColor] = useState<ChallengeColor>('random');
   const {socket} = useSocket();
 
   const sendChallenge = () => {
@@ -34,7 +35,7 @@ export default function ChallengeModal({ toUsername }: { toUsername: string }) {
           <AlertDialogDescription>
             The board awaits. Thirty-two pieces. Two minds. One victor. Shall we begin?
           </AlertDialogDescription>
-          <Tabs onValueChange={(value) => setPrefColor(value)} defaultValue="random" className="w-[400px] py-3">
+          <Tabs onValueChange={(value) => setPrefColor(value as ChallengeColor)} defaultValue="random" className="w-[400px] py-3">
             <div className="flex items-center gap-3">
               <p className="text-sm">Play as?</p>
               <TabsList>
