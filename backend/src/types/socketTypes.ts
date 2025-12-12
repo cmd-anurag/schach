@@ -4,8 +4,8 @@ import { Server, Socket } from "socket.io";
 export type ChallengeColor = 'white' | 'black' | 'random';
 
 export type ClientToServerEvents = {
-    'challenge-user' : (payload: {toUsername: string, color: ChallengeColor}) => void,
-    'accept-challenge' : (payload: {fromUsername: string, color: ChallengeColor}) => void,
+    'challenge-user' : (payload: {toUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
+    'accept-challenge' : (payload: {fromUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
     'reject-challenge' : (payload: {fromUsername: string}) => void,
     'join-room' : (payload: {roomID: string}) => void,
     'make-move' : (payload: {roomID: string, move: Move}) => void,
@@ -14,7 +14,7 @@ export type ClientToServerEvents = {
 
 export type ServerToClientEvents = {
     'online-users': (payload: {users: string[]}) => void,
-    'incoming-challenge': (payload : {fromUsername: string, color: ChallengeColor}) => void,
+    'incoming-challenge': (payload : {fromUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
     'challenge-accepted': (payload: {roomID: string, color: 'white' | 'black', opponent: string}) => void,
     'challenge-rejected': (payload: {by: string}) => void,
 
@@ -25,6 +25,7 @@ export type ServerToClientEvents = {
         turn: 'white' | 'black',
         moveHistory: Move[],
         opponentConnected: boolean,
+        timeLeft: number,
     }) => void,
 
     'move-made' : (payload: {
