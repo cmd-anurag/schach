@@ -36,13 +36,17 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       turn: room.turn,
       moveHistory: room.moveHistory,
       opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
-      timeLeft: playerColor === 'white'? room.time.white : room.time.black,
+      timeLeft: {
+        white: room.time.white,
+        black: room.time.black,
+      }
     });
-    room.time.lastTick = Date.now();
-    room.time.running = true;
+    
 
     const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
     if(opponentSocketId) {
+      room.time.lastTick = Date.now();
+      room.time.running = true;
       io.to(opponentSocketId).emit('opponent-connected');
     }
     console.log(`User ${username} joined room ${roomID} as ${playerColor}`);
@@ -72,11 +76,15 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       const elapsed = now - room.time.lastTick!;
       
       if(room.turn === 'white') {
-        room.time.white -= elapsed + room.time.increment;
-
+        room.time.white -= elapsed;
+        room.time.white += room.time.increment;
+        
       } else {
-        room.time.black -= elapsed + room.time.increment;
+        room.time.black -= elapsed;
+        room.time.black += room.time.increment;
       }
+
+      // todo- game over if timeout happens
 
       room.time.lastTick = now;      
       room.chessInstance.move(move);
@@ -89,7 +97,11 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       io.to(roomID).emit('move-made', {
         move,
         turn: nextTurn,
-        byColor: playerColor
+        byColor: playerColor,
+        timeLeft: {
+          white: room.time.white,
+          black: room.time.black,
+        }
       })
       console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {

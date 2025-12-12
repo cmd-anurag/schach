@@ -3,7 +3,7 @@
 import { useChessGame } from "@/hooks/useChessGame";
 import { useSocket } from "@/hooks/useSocket";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
 import { toast } from "sonner";
 
@@ -11,22 +11,30 @@ export default function Game() {
     const { socket } = useSocket();
     const { roomID } = useParams<{ roomID: string }>();
 
+    const [whiteTime, setWhiteTime] = useState(0);
+    const [blackTime, setBlackTime] = useState(0);
+
     const { position, color, isMyTurn, initializeGame, tryMakeMove, applyMove } = useChessGame();
 
     
     useEffect(() => {
         if (!socket || !roomID) return;
 
-        socket?.on('game-start', ({ roomID, myColor, opponent, turn, moveHistory, opponentConnected }) => {
+        socket?.on('game-start', ({ roomID, myColor, opponent, turn, moveHistory, opponentConnected, timeLeft }) => {
             initializeGame({ myColor, moveHistory, turn });
             toast.success(`Playing as ${myColor} vs ${opponent}`);
+            setWhiteTime(timeLeft.white / 1000);
+            setBlackTime(timeLeft.black / 1000);
 
             if (!opponentConnected) {
                 toast.info("Waiting for opponent to connect...");
             }
         });
 
-        socket.on('move-made', ({ move, turn: newTurn, byColor }) => {
+        socket.on('move-made', ({ move, turn: newTurn, byColor, timeLeft }) => {
+
+            setWhiteTime(timeLeft.white / 1000);
+            setBlackTime(timeLeft.black / 1000);
             if (byColor === color) return; // ignore my own echoed move
             applyMove(move, newTurn);
         });
@@ -101,6 +109,8 @@ export default function Game() {
                     <p className={isMyTurn ? "text-green-600 font-bold" : "text-gray-500"}>
                         {isMyTurn ? "Your turn" : "Opponent's turn"}
                     </p>
+                    <p>White Time Left: {whiteTime}</p>
+                    <p>Black Time Left: {blackTime}</p>
                 </div>
 
                 <Chessboard
@@ -111,3 +121,4 @@ export default function Game() {
     );
 }
 
+// TODO - Server side clocks are done , make clocks for client 
