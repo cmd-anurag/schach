@@ -13,11 +13,15 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     
   // incoming challenge
   //
-  socket.on("challenge-user", ({ toUsername, color }) => {
+  socket.on("challenge-user", ({ toUsername, color, time, increment }) => {
     // ---- validation checks ----
     if (!toUsername || typeof toUsername !== "string") {
       socket.emit("challenge-error", { message: "Invalid username" });
       return;
+    }
+
+    if(time <= 0 || increment < 0) {
+      socket.emit('challenge-error', {message: 'Invalid time control'});
     }
 
     if (toUsername === username) {
@@ -41,6 +45,8 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     io.to(targetSocketId).emit("incoming-challenge", {
       fromUsername: username,
       color,
+      time,
+      increment,
     });
 
     console.log(`Challenge: ${username} → ${toUsername} (pref=${color})`);
@@ -49,7 +55,12 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
   //
   // accept challenge
   //
-  socket.on("accept-challenge", ({ fromUsername, color }) => {
+  socket.on("accept-challenge", ({ fromUsername, color, time, increment }) => {
+
+    if(time <= 0 || increment < 0) {
+      socket.emit('challenge-error', {message: 'Invalid time control'});
+    }
+
     const accepter = username;
     const challengerSocketId = onlineUsers.get(fromUsername);
 
@@ -106,6 +117,13 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       turn: "white",
       moveHistory: [],
       chessInstance: new Chess(),
+      time: {
+        white: time,
+        black: time,
+        increment: increment,
+        lastTick: null,
+        running: false,
+      }
     };
 
     // store

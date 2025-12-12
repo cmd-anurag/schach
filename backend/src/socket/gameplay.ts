@@ -13,7 +13,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       return;
     }
 
-    let playerColor: 'white' | 'black' = 'white';
+    let playerColor: 'white' | 'black' | null = null;
     if(room.white.username === username) {
       playerColor = 'white';
       room.white.socketID = socket.id;
@@ -28,6 +28,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     }
 
     socket.join(roomID);
+
     socket.emit('game-start', {
       roomID,
       myColor: playerColor,
@@ -35,7 +36,10 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       turn: room.turn,
       moveHistory: room.moveHistory,
       opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
+      timeLeft: playerColor === 'white'? room.time.white : room.time.black,
     });
+    room.time.lastTick = Date.now();
+    room.time.running = true;
 
     const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
     if(opponentSocketId) {
@@ -63,17 +67,33 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       socket.emit("move-error", {message: "Not your turn"});
       return;
     }
-    room.moveHistory.push(move);
-    const nextTurn = room.turn === 'white'? "black" : 'white';
-    room.turn = nextTurn;
+    try {
+      const now = Date.now();
+      const elapsed = now - room.time.lastTick!;
+      
+      if(room.turn === 'white') {
+        room.time.white -= elapsed + room.time.increment;
 
-    io.to(roomID).emit('move-made', {
-      move,
-      turn: nextTurn,
-      byColor: playerColor
-    })
-    console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
+      } else {
+        room.time.black -= elapsed + room.time.increment;
+      }
+
+      room.time.lastTick = now;      
+      room.chessInstance.move(move);
+      room.moveHistory.push(move);
+
+
+      const nextTurn = room.turn === 'white'? "black" : 'white';
+      room.turn = nextTurn;
+  
+      io.to(roomID).emit('move-made', {
+        move,
+        turn: nextTurn,
+        byColor: playerColor
+      })
+      console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
+    } catch {
+      socket.emit("move-error", {message: "Invalid move"});
+    }
   });
 }
-
-// TODO MIGRATE BACKEND TO TS [DONE] AND ADD A CHESS JS INSTANCE TO EACH ROOM FOR VALIDATION [validation left]

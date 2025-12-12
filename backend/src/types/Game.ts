@@ -13,4 +13,11 @@ export type Room = {
     turn: "white" | "black",
     moveHistory: Move[],
     chessInstance: Chess,
+    time: {
+        white: number,
+        black: number,
+        increment: number,
+        lastTick: number | null,
+        running: boolean,
+    }
 }
