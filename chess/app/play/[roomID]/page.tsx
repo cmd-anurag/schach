@@ -33,7 +33,7 @@ export default function Game() {
             initializeGame({ myColor, moveHistory, turn });
             setOppUsername(opponent);
             // clock sync
-            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, })
+            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt })
             if (!opponentConnected) {
                 toast.info("Waiting for opponent to connect...");
             }
@@ -41,7 +41,7 @@ export default function Game() {
 
         socket.on('move-made', ({ move, turn, byColor, timeLeft }) => {
 
-            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn });
+            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
             if (byColor === color) return; // ignore my own echoed move
             applyMove(move, turn);
         });
