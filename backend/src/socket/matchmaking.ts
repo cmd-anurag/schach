@@ -118,9 +118,9 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       moveHistory: [],
       chessInstance: new Chess(),
       time: {
-        white: time,
-        black: time,
-        increment: increment,
+        white: time * 1000 * 60, // storeing time in ms instead of minutes received from client
+        black: time * 1000 * 60,
+        increment: increment * 1000, // increment received in seconds from client
         lastTick: null,
         running: false,
       }

@@ -24,13 +24,20 @@ export type ServerToClientEvents = {
         turn: 'white' | 'black',
         moveHistory: Move[],
         opponentConnected: boolean,
-        timeLeft: number,
+        timeLeft: {
+            white: number,
+            black: number,
+        },
     }) => void,
 
     'move-made' : (payload: {
         move: Move,
         turn: 'white' | 'black',
         byColor: 'white' | 'black',
+        timeLeft: {
+            white: number,
+            black: number,
+        },
     }) => void,
 
     'opponent-connected' : () => void,
