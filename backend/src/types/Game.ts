@@ -17,7 +17,7 @@ export type Room = {
         white: number,
         black: number,
         increment: number,
-        lastTick: number | null,
+        turnStartedAt: number | null, // At turnStartedAt, the active player had exactly X ms left.
         running: boolean,
     }
 }
