@@ -1,6 +1,22 @@
 import { Room } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 
+// this function simply updates the clock based only on ELAPSED time since the last tick
+function updateClock(room: Room) {
+  if(!room.time.running || !room.time.lastTick) return;
+
+  const now = Date.now();
+  const elapsed = now - room.time.lastTick;
+
+  if(room.turn === 'white') {
+    room.time.white = Math.max(0, room.time.white - elapsed);
+  } else {
+    room.time.black = Math.max(0, room.time.black - elapsed);
+  }
+
+  room.time.lastTick = now;
+}
+
 export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, rooms: Map<string, Room>) {
   const username = socket.data.user.username;
 
@@ -28,7 +44,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     }
 
     socket.join(roomID);
-
+    updateClock(room);
     socket.emit('game-start', {
       roomID,
       myColor: playerColor,
@@ -72,21 +88,16 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       return;
     }
     try {
-      const now = Date.now();
-      const elapsed = now - room.time.lastTick!;
+      updateClock(room);
       
       if(room.turn === 'white') {
-        room.time.white -= elapsed;
         room.time.white += room.time.increment;
-        
       } else {
-        room.time.black -= elapsed;
         room.time.black += room.time.increment;
       }
 
       // todo- game over if timeout happens
 
-      room.time.lastTick = now;      
       room.chessInstance.move(move);
       room.moveHistory.push(move);
 
