@@ -91,20 +91,37 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     try {
       updateClock(room);
       
+      // todo - game over if timeout happens
+      if(room.time.white === 0) {
+        io.to(roomID).emit('game-over', {
+          winner: 'black',
+          reason: 'timeout',
+        })
+        return;
+      } else if(room.time.black === 0) {
+        io.to(roomID).emit('game-over', {
+          winner: 'white',
+          reason: 'timeout',
+        })
+        return;
+      }
+      
+      // increment
       if(room.turn === 'white') {
         room.time.white += room.time.increment;
       } else {
         room.time.black += room.time.increment;
       }
 
-      // todo- game over if timeout happens
 
       room.chessInstance.move(move);
       room.moveHistory.push(move);
 
-
       const nextTurn = room.turn === 'white'? "black" : 'white';
       room.turn = nextTurn;
+      
+      // think about whether i set turnStartedAt of room again, its already updated in updateClock()
+      room.time.turnStartedAt = Date.now();
 
       io.to(roomID).emit('move-made', {
         move,
@@ -116,6 +133,25 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
           turnStartedAt: room.time.turnStartedAt ?? Date.now(),
         }
       })
+
+      // game over by checkmate 
+      if(room.chessInstance.isCheckmate()) {
+        
+        io.to(roomID).emit('game-over', {
+          winner: room.turn,
+          reason: 'checkmate',
+        })
+        return;
+      }
+
+      // game draw
+      if(room.chessInstance.isDraw()) {
+        io.to(roomID).emit('game-over', {
+          winner: 'draw',
+          reason: 'draw',
+        })
+        return;
+      }
       console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {
       socket.emit("move-error", {message: "Invalid move"});

@@ -67,7 +67,7 @@ export function useChessClock() {
         start();
     }
 
-    useEffect(() => pause, []);
+    useEffect(() => pause(), []); // todo fix cleanup  
 
     return {
         whiteTime,

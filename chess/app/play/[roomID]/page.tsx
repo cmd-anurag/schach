@@ -17,7 +17,7 @@ export default function Game() {
     const { roomID } = useParams<{ roomID: string }>();
 
     const { position, color, isMyTurn, initializeGame, tryMakeMove, applyMove } = useChessGame();
-    const { whiteTime, blackTime, sync } = useChessClock();
+    const { whiteTime, blackTime, sync, pause } = useChessClock();
 
     const [myUsername, setMyUsername] = useState<string | null>(null);
     const [oppUsername, setOppUsername] = useState<string | null>(null);
@@ -38,19 +38,15 @@ export default function Game() {
                 toast.info("Waiting for opponent to connect...");
             }
         });
-
         socket.on('move-made', ({ move, turn, byColor, timeLeft }) => {
-
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
             if (byColor === color) return; // ignore my own echoed move
             applyMove(move, turn);
         });
 
-        socket.on('opponent-connected', () => {
-            toast.success('Opponent Connected');
-        })
-        socket.on('opponent-disconnected', () => {
-            toast.warning('Opponent disconnected');
+        socket.on('game-over', ({winner, reason}) => {
+            pause();
+            toast.info(`Game Over ${winner} won! Reason - ${reason}`);
         })
 
         socket.on('room-error', ({ message }) => {
@@ -62,12 +58,14 @@ export default function Game() {
         });
 
         socket?.emit('join-room', { roomID });
+        
         return () => {
+            // TOOD - make seperate handlers for them so i dont have to remove all listeners
+            // bad code
             socket.off('game-over');
             socket.off('game-start');
-            socket.off('opponent-connected');
-            socket.off('opponent-disconnected');
             socket.off('move-made');
+            socket.off('game-over');
             socket?.off('room-error');
             socket?.off('move-error');
         }
