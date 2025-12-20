@@ -43,6 +43,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
 
     socket.join(roomID);
     updateClock(room);
+    room.time.turnStartedAt = Date.now();
 
     socket.emit('game-start', {
       roomID,
@@ -54,7 +55,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       timeLeft: {
         white: room.time.white,
         black: room.time.black,
-        turnStartedAt: room.time.turnStartedAt ?? Date.now(),
+        turnStartedAt: room.time.turnStartedAt,
       }
     });
     
@@ -64,7 +65,6 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       room.time.running = true;
       io.to(opponentSocketId).emit('opponent-connected');
     }
-    room.time.turnStartedAt = Date.now();
 
     console.log(`User ${username} joined room ${roomID} as ${playerColor}`);
   });
