@@ -22,23 +22,38 @@ export function useChessClock() {
     const [turn, setTurn] = useState<Color>('white'); // just in case if i need any ui update for the clock depending on turn
     const turnRef = useRef<Color>('white'); 
 
+    const [timedOut, setTimedOut] = useState<'white' | 'black' | null>(null);
+    const timedOutRef = useRef(false); 
+
     const rafID = useRef<number | null>(null);
     const running = useRef(false);
 
     function tick(now: number) {
         if(!running.current) return;
 
-        
         const elapsed = Date.now() - turnStartedAt.current;
 
+        let nextWhite = baseWhite.current;
+        let nextBlack = baseBlack.current;
+
         if(turnRef.current === 'white') {
-            setWhiteTime(Math.max(0, baseWhite.current - elapsed));
-            setBlackTime(baseBlack.current);
+            nextWhite = Math.max(0, baseWhite.current - elapsed);
         } else {
-            setBlackTime(Math.max(0, baseBlack.current - elapsed));
-            setWhiteTime(baseWhite.current);
+            nextBlack = Math.max(0, baseBlack.current - elapsed);
         }
-        
+
+        setWhiteTime(nextWhite);
+        setBlackTime(nextBlack);
+
+        if(!timedOutRef.current) {
+            if(nextWhite === 0) {
+                timedOutRef.current = true;
+                setTimedOut('white');
+            } else if(nextBlack === 0) {
+                timedOutRef.current = true;
+                setTimedOut('black');
+            }
+        }
         rafID.current = requestAnimationFrame(tick);
     }
 
@@ -63,15 +78,22 @@ export function useChessClock() {
         turnStartedAt.current = payload.turnStartedAt;
         turnRef.current = payload.turn;
 
+        setTimedOut(null);
+        timedOutRef.current = false;
+
         setTurn(payload.turn);
         start();
     }
 
-    useEffect(() => pause(), []); // todo fix cleanup  
+    useEffect(() => {
+        return () => pause();
+    }, []);
+
 
     return {
         whiteTime,
         blackTime,
+        timedOut,
         sync,
         pause,
     }

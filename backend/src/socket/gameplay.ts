@@ -13,8 +13,6 @@ function updateClock(room: Room) {
   } else {
     room.time.black = Math.max(0, room.time.black - elapsed);
   }
-
-  room.time.turnStartedAt = now;
 }
 
 export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, rooms: Map<string, Room>) {
@@ -45,6 +43,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
 
     socket.join(roomID);
     updateClock(room);
+
     socket.emit('game-start', {
       roomID,
       myColor: playerColor,
@@ -59,13 +58,14 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       }
     });
     
-
     const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
     if(opponentSocketId) {
       room.time.turnStartedAt = Date.now();
       room.time.running = true;
       io.to(opponentSocketId).emit('opponent-connected');
     }
+    room.time.turnStartedAt = Date.now();
+
     console.log(`User ${username} joined room ${roomID} as ${playerColor}`);
   });
 
@@ -158,4 +158,25 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       socket.emit("move-error", {message: "Invalid move"});
     }
   });
+
+  socket.on('game-timeout', ({roomID}) => {
+
+    const room = rooms.get(roomID);
+    if(!room) {
+      return;
+    }
+    let playerColor = null;
+    if(room.white.username === username) playerColor = "white";
+    else if(room.black.username === username) playerColor = "black";
+    if (!playerColor) {
+      return;
+    }
+    updateClock(room);
+    console.log("Game Timeout event receieved by server");
+    if(room.time.white === 0) {
+      io.to(roomID).emit('game-over', {winner: 'black', reason: 'timeout'});
+    } else if(room.time.black === 0) {
+      io.to(roomID).emit('game-over', {winner: 'white', reason: 'timeout'});
+    }
+  })
 }

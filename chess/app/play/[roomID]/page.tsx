@@ -17,11 +17,17 @@ export default function Game() {
     const { roomID } = useParams<{ roomID: string }>();
 
     const { position, color, isMyTurn, initializeGame, tryMakeMove, applyMove } = useChessGame();
-    const { whiteTime, blackTime, sync, pause } = useChessClock();
+    const { whiteTime, blackTime, sync, pause, timedOut } = useChessClock();
 
     const [myUsername, setMyUsername] = useState<string | null>(null);
     const [oppUsername, setOppUsername] = useState<string | null>(null);
     
+    useEffect(() => {
+        if(!timedOut) return;
+
+        socket?.emit('game-timeout', {roomID});
+        console.log(timedOut);
+    }, [timedOut]);
 
     useEffect(() => {
         if (!socket || !roomID) return;
@@ -144,5 +150,3 @@ export default function Game() {
         </div>
     );
 }
-
-// TODO - Server side clocks are done , make clocks for client 
