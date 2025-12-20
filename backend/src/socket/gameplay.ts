@@ -137,7 +137,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       if(room.chessInstance.isCheckmate()) {
         
         io.to(roomID).emit('game-over', {
-          winner: room.turn,
+          winner: room.turn === 'black'? 'white' : 'black',
           reason: 'checkmate',
         })
         return;

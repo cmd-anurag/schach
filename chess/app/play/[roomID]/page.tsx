@@ -1,10 +1,12 @@
 "use client";
 
 import Clock from "@/components/Clock";
+import MoveHistory from "@/components/MoveHistory";
 import { useAuth } from "@/hooks/useAuth";
 import { useChessClock } from "@/hooks/useChessClock";
 import { useChessGame } from "@/hooks/useChessGame";
 import { useSocket } from "@/hooks/useSocket";
+import { useMoveStore } from "@/lib/moveStore";
 import { Clock10, User } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -37,6 +39,7 @@ export default function Game() {
         socket?.on('game-start', ({ roomID, myColor, opponent, turn, moveHistory, opponentConnected, timeLeft }) => {
 
             initializeGame({ myColor, moveHistory, turn });
+            useMoveStore.getState().setMoves(moveHistory);
             setOppUsername(opponent);
             // clock sync
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt })
@@ -48,6 +51,7 @@ export default function Game() {
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
             if (byColor === color) return; // ignore my own echoed move
             applyMove(move, turn);
+            useMoveStore.getState().addMove(move.san);
         });
 
         socket.on('game-over', ({winner, reason}) => {
@@ -71,7 +75,6 @@ export default function Game() {
             socket.off('game-over');
             socket.off('game-start');
             socket.off('move-made');
-            socket.off('game-over');
             socket?.off('room-error');
             socket?.off('move-error');
         }
@@ -145,7 +148,7 @@ export default function Game() {
                 </div>
             </div>
             <div className="border w-[400px] h-[80vh]">
-                <h1>Move History</h1>
+                <MoveHistory />
             </div>
         </div>
     );
