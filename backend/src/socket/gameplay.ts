@@ -13,8 +13,6 @@ function updateClock(room: Room) {
   } else {
     room.time.black = Math.max(0, room.time.black - elapsed);
   }
-
-  room.time.turnStartedAt = now;
 }
 
 export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, rooms: Map<string, Room>) {
@@ -45,27 +43,29 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
 
     socket.join(roomID);
     updateClock(room);
+    room.time.turnStartedAt = Date.now();
+
     socket.emit('game-start', {
       roomID,
       myColor: playerColor,
       opponent: playerColor === 'white'? room.black.username : room.white.username,
       turn: room.turn,
-      moveHistory: room.moveHistory,
+      moveHistory: room.chessInstance.history(),
       opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
       timeLeft: {
         white: room.time.white,
         black: room.time.black,
-        turnStartedAt: room.time.turnStartedAt ?? Date.now(),
+        turnStartedAt: room.time.turnStartedAt,
       }
     });
     
-
     const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
     if(opponentSocketId) {
       room.time.turnStartedAt = Date.now();
       room.time.running = true;
       io.to(opponentSocketId).emit('opponent-connected');
     }
+
     console.log(`User ${username} joined room ${roomID} as ${playerColor}`);
   });
 
@@ -91,20 +91,36 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     try {
       updateClock(room);
       
+      // todo - game over if timeout happens
+      if(room.time.white === 0) {
+        io.to(roomID).emit('game-over', {
+          winner: 'black',
+          reason: 'timeout',
+        })
+        return;
+      } else if(room.time.black === 0) {
+        io.to(roomID).emit('game-over', {
+          winner: 'white',
+          reason: 'timeout',
+        })
+        return;
+      }
+      
+      // increment
       if(room.turn === 'white') {
         room.time.white += room.time.increment;
       } else {
         room.time.black += room.time.increment;
       }
 
-      // todo- game over if timeout happens
 
       room.chessInstance.move(move);
-      room.moveHistory.push(move);
-
 
       const nextTurn = room.turn === 'white'? "black" : 'white';
       room.turn = nextTurn;
+      
+      // think about whether i set turnStartedAt of room again, its already updated in updateClock()
+      room.time.turnStartedAt = Date.now();
 
       io.to(roomID).emit('move-made', {
         move,
@@ -116,9 +132,51 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
           turnStartedAt: room.time.turnStartedAt ?? Date.now(),
         }
       })
+
+      // game over by checkmate 
+      if(room.chessInstance.isCheckmate()) {
+        
+        io.to(roomID).emit('game-over', {
+          winner: room.turn,
+          reason: 'checkmate',
+        })
+        return;
+      }
+
+      // game draw
+      if(room.chessInstance.isDraw()) {
+        io.to(roomID).emit('game-over', {
+          winner: 'draw',
+          reason: 'draw',
+        })
+        return;
+      }
+
+      // after game over send some kind of signa to server too to do post game stuff like saving it to DB
       console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {
       socket.emit("move-error", {message: "Invalid move"});
     }
   });
+
+  socket.on('game-timeout', ({roomID}) => {
+
+    const room = rooms.get(roomID);
+    if(!room) {
+      return;
+    }
+    let playerColor = null;
+    if(room.white.username === username) playerColor = "white";
+    else if(room.black.username === username) playerColor = "black";
+    if (!playerColor) {
+      return;
+    }
+    updateClock(room);
+    console.log("Game Timeout event receieved by server");
+    if(room.time.white === 0) {
+      io.to(roomID).emit('game-over', {winner: 'black', reason: 'timeout'});
+    } else if(room.time.black === 0) {
+      io.to(roomID).emit('game-over', {winner: 'white', reason: 'timeout'});
+    }
+  })
 }

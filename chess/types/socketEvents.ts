@@ -9,6 +9,7 @@ export type ClientToServerEvents = {
     'join-room' : (payload: {roomID: string}) => void,
     'make-move' : (payload: {roomID: string, move: Move}) => void,
     'get-online-users' : () => void,
+    'game-timeout' : (payload: {roomID: string}) => void,
 }
 
 export type ServerToClientEvents = {
@@ -22,7 +23,7 @@ export type ServerToClientEvents = {
         myColor: 'white' | 'black',
         opponent: string,
         turn: 'white' | 'black',
-        moveHistory: Move[],
+        moveHistory: string[],
         opponentConnected: boolean,
         timeLeft: {
             white: number,
