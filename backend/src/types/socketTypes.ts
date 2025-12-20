@@ -22,7 +22,7 @@ export type ServerToClientEvents = {
         myColor: 'white' | 'black',
         opponent: string,
         turn: 'white' | 'black',
-        moveHistory: Move[],
+        moveHistory: string[],
         opponentConnected: boolean,
         timeLeft: {
             white: number,

@@ -50,7 +50,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       myColor: playerColor,
       opponent: playerColor === 'white'? room.black.username : room.white.username,
       turn: room.turn,
-      moveHistory: room.moveHistory,
+      moveHistory: room.chessInstance.history(),
       opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
       timeLeft: {
         white: room.time.white,
@@ -115,7 +115,6 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
 
 
       room.chessInstance.move(move);
-      room.moveHistory.push(move);
 
       const nextTurn = room.turn === 'white'? "black" : 'white';
       room.turn = nextTurn;
@@ -152,6 +151,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
         })
         return;
       }
+
+      // after game over send some kind of signa to server too to do post game stuff like saving it to DB
       console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {
       socket.emit("move-error", {message: "Invalid move"});

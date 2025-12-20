@@ -11,7 +11,6 @@ export type Room = {
         socketID: string | null,
     },
     turn: "white" | "black",
-    moveHistory: Move[],
     chessInstance: Chess,
     time: {
         white: number,

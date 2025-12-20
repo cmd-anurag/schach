@@ -11,7 +11,7 @@ export function useChessGame() {
 
   function initializeGame(data: {
     myColor:'white' | 'black',
-    moveHistory: Move[],
+    moveHistory: string[],
     turn: 'white' | 'black',
   }) {
     const game = chessRef.current;
