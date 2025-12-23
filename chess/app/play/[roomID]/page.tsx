@@ -7,10 +7,11 @@ import { useChessClock } from "@/hooks/useChessClock";
 import { useChessGame } from "@/hooks/useChessGame";
 import { useSocket } from "@/hooks/useSocket";
 import { ServerToClientEvents } from "@/types/socketEvents";
+import { Square } from "chess.js";
 import { Clock10, User } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Chessboard, PieceDropHandlerArgs } from 'react-chessboard';
+import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
 import { toast } from "sonner";
 
 export default function Game() {
@@ -29,12 +30,16 @@ export default function Game() {
     const [color, setColor] = useState<'white' | 'black' | null>(null);
     const [turn, setTurn] = useState<'white' | 'black'>('white');
 
-    const { position, isMyTurn, tryMakeMove } = useChessGame({
+    const { position, isMyTurn, tryMakeMove, getLegalMovesFromSquare, getPiece } = useChessGame({
         moveHistory,
         cursor,
         myColor: color,
         turn,
     });
+
+    // states for click-move logic
+    const [moveFrom, setMoveFrom] = useState('');
+    const [optionSquares, setOptionSquares] = useState({});
 
     // Effect 1 - When either player times out, inform the server
     useEffect(() => {
@@ -102,7 +107,106 @@ export default function Game() {
         };
     }, [socket, color, sync, pause]);
 
-    // TODO - Click to move and optimistic moves 
+    // TODO - optimistic moves 
+    // TODO - find out why piece snap back does not happen in click move but happens in drag move
+    
+    function getMoveOptions(square: Square) {
+        if(!isMyTurn) {
+            setOptionSquares({});
+            return false;
+        }
+
+        // get the moves for the square
+        const moves = getLegalMovesFromSquare(square);
+
+        // if no moves, clear the option squares
+        if (moves.length === 0) {
+            setOptionSquares({});
+            return false;
+        }
+
+        // create a new object to store the option squares
+        const newSquares: Record<string, React.CSSProperties> = {};
+
+        // loop through the moves and set the option squares
+        for (const move of moves) {
+            newSquares[move.to] = {
+                background: getPiece(move.to) && getPiece(move.to)?.color !== getPiece(square)?.color ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // larger circle for capturing
+                    : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+                // smaller circle for moving
+                borderRadius: '50%'
+            };
+        }
+
+        // set the square clicked to move from to yellow
+        newSquares[square] = {
+            background: 'rgba(255, 255, 0, 0.4)'
+        };
+
+        // set the option squares
+        setOptionSquares(newSquares);
+
+        // return true to indicate that there are move options
+        return true;
+    }
+
+    function onSquareClick({
+        square,
+        piece
+    }: SquareHandlerArgs) {
+        // piece clicked to move
+
+        if (!moveFrom && piece) {
+            // get the move options for the square
+            const hasMoveOptions = getMoveOptions(square as Square);
+
+            // if move options, set the moveFrom to the square
+            if (hasMoveOptions) {
+                setMoveFrom(square);
+            }
+
+            // return early
+            return;
+        }
+
+        // square clicked to move to, check if valid move
+        const moves = getLegalMovesFromSquare(moveFrom as Square);
+        const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
+
+        // not a valid move
+        if (!foundMove) {
+            // check if clicked on new piece
+            const hasMoveOptions = getMoveOptions(square as Square);
+
+            // if new piece, setMoveFrom, otherwise clear moveFrom
+            setMoveFrom(hasMoveOptions ? square : '');
+
+            // return early
+            return;
+        }
+
+        
+
+
+        const move = tryMakeMove(moveFrom, square);
+        if (!move) {
+            // if invalid, setMoveFrom and getMoveOptions
+            const hasMoveOptions = getMoveOptions(square as Square);
+
+            // if new piece, setMoveFrom, otherwise clear moveFrom
+            if (hasMoveOptions) {
+                setMoveFrom(square);
+            }
+
+            // return early
+            return;
+        }
+        socket?.emit('make-move', { roomID, move });
+        // clear moveFrom and optionSquares
+        setMoveFrom('');
+        setOptionSquares({});
+    }
+
     function onPieceDrop({
         sourceSquare,
         targetSquare
@@ -123,6 +227,9 @@ export default function Game() {
             return false; // Invalid move
         }
         socket?.emit('make-move', { roomID, move });
+        // clear moveFrom and optionSquares
+        setMoveFrom('');
+        setOptionSquares({});
         return true;
     }
 
@@ -150,6 +257,8 @@ export default function Game() {
     const chessboardOptions = {
         position,
         onPieceDrop,
+        onSquareClick,
+        squareStyles: optionSquares,
         boardOrientation: boardOrientationColor,
         canDragPiece,
         id: 'play-vs-random'

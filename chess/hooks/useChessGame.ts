@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Chess, Move } from "chess.js";
+import { Chess, Move, Piece, Square } from "chess.js";
 
 type Color = 'white' | 'black' | null;
 
@@ -34,6 +34,14 @@ export function useChessGame(params: {
   const isMyTurn = myColor !== null && turn === myColor && cursor === moveHistory.length;
   const legalMovesVerbose = chess.moves({ verbose: true });
 
+  function getPiece(square: Square) : Piece | undefined {
+    return chess.get(square);
+  }
+
+  function getLegalMovesFromSquare(square: Square) : Move[]{
+    return chess.moves({square, verbose: true});
+  }
+
   function validateMove(from: string, to: string, promotion = "q"): Move | null {
     try {
       const temp = new Chess(chess.fen());
@@ -54,6 +62,8 @@ export function useChessGame(params: {
     gameOver,
     isMyTurn,
     legalMovesVerbose,
+    getPiece,
+    getLegalMovesFromSquare,
     tryMakeMove,
     validateMove,
   };
