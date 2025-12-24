@@ -1,79 +1,70 @@
-import { useRef, useState } from "react";
-import { Chess, Move } from "chess.js";
+import { useMemo } from "react";
+import { Chess, Move, Piece, Square } from "chess.js";
 
-export function useChessGame() {
-  const chessRef = useRef(new Chess());
+type Color = 'white' | 'black' | null;
 
-  const [position, setPosition] = useState(chessRef.current.fen());
-  const [color, setColor] = useState<"white" | "black" | null>(null);
-  const [turn, setTurn] = useState<'white' | 'black'>('white');
-  const [gameOver, setGameOver] = useState(false);
+export function useChessGame(params: {
+  moveHistory: string[],
+  cursor: number,
+  myColor: Color,
+  turn: 'white' | 'black',
+}) {
 
-  function initializeGame(data: {
-    myColor:'white' | 'black',
-    moveHistory: string[],
-    turn: 'white' | 'black',
-  }) {
-    const game = chessRef.current;
-    game.reset();
+  const {moveHistory, cursor, myColor, turn} = params;
 
-    for(const move of data.moveHistory) {
+  // Compute position synchronously during render using useMemo
+  const chess = useMemo(() => {
+    const game = new Chess();
+    const movesToApply = moveHistory.slice(0, Math.max(0, Math.min(cursor, moveHistory.length)));
+
+    for (const move of movesToApply) {
       try {
         game.move(move);
       } catch (err) {
-        console.log('Invalid Move in history', err, move);
+        console.log('Invalid move in history', err);
         break;
       }
     }
+    return game;
+  }, [moveHistory, cursor]);
 
-    setColor(data.myColor);
-    setTurn(data.turn);
-    setPosition(game.fen());
-    setGameOver(game.isGameOver());
+  // DERIVED STATES - now all computed from the same chess instance
+  const position = chess.fen();
+  const gameOver = chess.isGameOver();
+  const isMyTurn = myColor !== null && turn === myColor && cursor === moveHistory.length;
+  const legalMovesVerbose = chess.moves({ verbose: true });
+
+  function getPiece(square: Square) : Piece | undefined {
+    return chess.get(square);
   }
 
-  function applyMove(move: Move, newTurn: 'white' | 'black') {
-    const game = chessRef.current;
+  function getLegalMovesFromSquare(square: Square) : Move[]{
+    return chess.moves({square, verbose: true});
+  }
+
+  function validateMove(from: string, to: string, promotion = "q"): Move | null {
     try {
-      game.move(move);
-    } catch(err) {
-      console.log('Invalid Move from server', err, move);
-      return;
+      const temp = new Chess(chess.fen());
+      const mv = temp.move({ from, to, promotion });
+      return mv ?? null;
+    } catch {
+      return null;
     }
-    setPosition(game.fen());
-    setTurn(newTurn);
-    setGameOver(game.isGameOver());
   }
 
   function tryMakeMove(from: string, to: string): Move | null {
-      if (turn !== color) return null;
-
-      const game = chessRef.current;
-
-      let move: Move | null;
-      try {
-        move = game.move({ from, to, promotion: 'q' });
-      } catch {
-        return null;
-      }
-      if (!move) return null;
-
-      // local update for my own move
-      setPosition(game.fen());
-      setTurn(color === 'white' ? 'black' : 'white');
-
-      return move; // return for server sync
+    if (!isMyTurn) return null;
+    return validateMove(from, to);
   }
-
 
   return {
     position,
-    color,
-    turn,
     gameOver,
-    isMyTurn: turn === color,
+    isMyTurn,
+    legalMovesVerbose,
+    getPiece,
+    getLegalMovesFromSquare,
     tryMakeMove,
-    initializeGame,
-    applyMove,
+    validateMove,
   };
 }

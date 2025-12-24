@@ -25,7 +25,7 @@ export function SocketProvider({children} : {children: ReactNode}) {
             return;
         }
 
-        const newSocket = io('ws://localhost:3010', {
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
             auth: {token},
             transports: ['websocket'],
             autoConnect: true,

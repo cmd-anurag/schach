@@ -1,7 +1,11 @@
-import { useMoveStore } from "@/lib/moveStore"
+type MoveHistoryProps = {
+  moves: string[];
+  currentIndex: number;
+  onJump: (index: number) => void;
+};
 
-export default function MoveHistory() {
-  const moves = useMoveStore((s) => s.moves);
+export default function MoveHistory({moves, currentIndex, onJump} : MoveHistoryProps) {
+  
   return (
     <div>
       {moves.map((move, index) => {
