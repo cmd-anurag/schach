@@ -16,12 +16,11 @@ import { toast } from "sonner";
 
 export default function Game() {
     const { socket } = useSocket();
-    const { username } = useAuth();
+    const { username: myUsername } = useAuth();
     const { roomID } = useParams<{ roomID: string }>();
 
     const { whiteTime, blackTime, sync, pause, timedOut } = useChessClock();
 
-    const [myUsername, setMyUsername] = useState<string | null>(null);
     const [oppUsername, setOppUsername] = useState<string | null>(null);
 
     // GAME STATES
@@ -47,15 +46,14 @@ export default function Game() {
 
         socket?.emit('game-timeout', { roomID });
         console.log(timedOut);
-    }, [timedOut]);
+    }, [timedOut, socket, roomID]);
 
     // Effect 2: Join room only (runs once per socket/room)
     useEffect(() => {
         if (!socket || !roomID) return;
 
-        setMyUsername(username);
         socket.emit('join-room', { roomID });
-    }, [socket, roomID, username]);
+    }, [socket, roomID]);
 
     // Effect 3: Event handlers
     useEffect(() => {
@@ -107,9 +105,7 @@ export default function Game() {
         };
     }, [socket, color, sync, pause]);
 
-    // TODO - optimistic moves 
-    // TODO - find out why piece snap back does not happen in click move but happens in drag move
-    
+    // TODO - optimistic moves     
     function getMoveOptions(square: Square) {
         if(!isMyTurn) {
             setOptionSquares({});
