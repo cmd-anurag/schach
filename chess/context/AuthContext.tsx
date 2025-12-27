@@ -5,7 +5,7 @@ import { createContext, ReactNode, useEffect, useState } from "react";
 export interface AuthContextType {
     token: string | null,
     username: string | null,
-    isLoading: boolean,
+    isLoggedIn: () => boolean,
     login: (token: string, username: string) => void;
     logout: () => void;
 }
@@ -38,9 +38,14 @@ export function AuthProvider({children} : {children: ReactNode}) {
         setToken(null);
         setUsername(null);
     }
+    
+    const isLoggedIn = () => {
+      if (!isLoading && !token) return false;
+      return true;
+    }
 
     return (
-        <AuthContext.Provider value={{ token, username, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ token, username, isLoggedIn, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

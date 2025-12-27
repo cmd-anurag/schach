@@ -7,7 +7,7 @@ type MoveHistoryProps = {
 export default function MoveHistory({moves, currentIndex, onJump} : MoveHistoryProps) {
   
   return (
-    <div>
+    <div className="p-4">
       {moves.map((move, index) => {
         const moveNumber = Math.floor(index / 2) + 1;
         const isWhite = index % 2 == 0;
