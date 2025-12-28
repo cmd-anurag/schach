@@ -28,9 +28,11 @@ export function useChessClock() {
     const rafID = useRef<number | null>(null);
     const running = useRef(false);
 
-    function tick(now: number) {
+    function tick() {
         if(!running.current) return;
-
+        
+        // its not called during render
+        // eslint-disable-next-line react-hooks/purity
         const elapsed = Date.now() - turnStartedAt.current;
 
         let nextWhite = baseWhite.current;

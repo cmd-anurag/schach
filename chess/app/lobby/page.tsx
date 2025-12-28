@@ -13,7 +13,7 @@ export default function Lobby() {
 
   const router = useRouter();
 
-  const {username, token, logout, isLoggedIn} = useAuth();
+  const {username, logout, isLoggedIn} = useAuth();
   const {socket} = useSocket();
 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);

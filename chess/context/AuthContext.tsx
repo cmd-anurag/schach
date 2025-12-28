@@ -5,8 +5,7 @@ import { createContext, ReactNode, useEffect, useState } from "react";
 export interface AuthContextType {
     token: string | null,
     username: string | null,
-    isLoggedIn: () => boolean,
-    login: (token: string, username: string) => void;
+    isLoggedIn: () => boolean,    login: (token: string, username: string) => void;
     logout: () => void;
 }
 
@@ -20,6 +19,8 @@ export function AuthProvider({children} : {children: ReactNode}) {
     useEffect(() => {
         const savedToken = localStorage.getItem('token');
         const savedUsername = localStorage.getItem('username');
+        // a necessary evil i think
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(savedToken);
         setUsername(savedUsername);
         setIsLoading(false);
