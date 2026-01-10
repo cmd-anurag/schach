@@ -3,6 +3,7 @@
 import Board from "@/components/Board";
 import Clock from "@/components/Clock";
 import MoveHistory from "@/components/MoveHistory";
+import { ResignButton } from "@/components/ResignButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useChessClock } from "@/hooks/useChessClock";
 import { useSocket } from "@/hooks/useSocket";
@@ -27,6 +28,7 @@ export default function Game() {
     const [cursor, setCursor] = useState(moveHistory.length);
     const [color, setColor] = useState<'white' | 'black' | null>(null);
     const [turn, setTurn] = useState<'white' | 'black'>('white');
+    const [gameFinished, setGameFinished] = useState(false);
 
     // Effect 1 - When either player times out, inform the server
     useEffect(() => {
@@ -72,6 +74,7 @@ export default function Game() {
 
         const handleGameOver: ServerToClientEvents['game-over'] = ({ winner, reason }) => {
             pause();
+            setGameFinished(true);
             toast.info(`Game Over ${winner} won! Reason - ${reason}`);
         };
 
@@ -141,7 +144,7 @@ export default function Game() {
                 </div>
             </div>
             <div className="h-screen flex items-center">
-              <Board boardState={{ moveHistory, cursor, turn, color }} roomID={roomID} />
+              <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} roomID={roomID} />
             </div>
             <div className="border w-[400px] h-[80vh] flex flex-col justify-between rounded-lg">
                 <MoveHistory
@@ -149,7 +152,8 @@ export default function Game() {
                     currentIndex={cursor}
                     onJump={(index: number) => setCursor(index)}
                 />
-                <div className="flex justify-center gap-4 p-10">
+                <div className="flex justify-center items-center gap-4 p-10">
+                    <ResignButton roomID={roomID} />
                     <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.max(0, prev - 1))}><ArrowLeft /></button>
                     <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}><ArrowRight /></button>
                 </div>

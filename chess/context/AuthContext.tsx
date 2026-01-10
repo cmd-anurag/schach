@@ -5,7 +5,8 @@ import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } f
 export interface AuthContextType {
     token: string | null,
     username: string | null,
-    isLoggedIn: boolean,    
+    isLoggedIn: boolean,
+    loading: boolean,  
     login: (token: string, username: string) => void;
     logout: () => void;
 }
@@ -15,6 +16,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({children} : {children: ReactNode}) {
     const [token, setToken] = useState<string | null>(null);
     const [username, setUsername] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const savedToken = localStorage.getItem('token');
@@ -23,6 +25,7 @@ export function AuthProvider({children} : {children: ReactNode}) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(savedToken);
         setUsername(savedUsername);
+        setLoading(false);
     }, [])
 
     const login = useCallback((newToken: string, newUsername: string) => {
@@ -50,7 +53,7 @@ export function AuthProvider({children} : {children: ReactNode}) {
     const isLoggedIn = useMemo(() => !!token, [token]);
 
     return (
-        <AuthContext.Provider value={{ token, username, isLoggedIn, login, logout }}>
+        <AuthContext.Provider value={{ token, username, isLoggedIn, loading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );

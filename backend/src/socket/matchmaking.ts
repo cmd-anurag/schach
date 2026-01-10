@@ -116,6 +116,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
 
       turn: "white",
       chessInstance: new Chess(),
+      gameFinished: false,
       time: {
         white: time * 1000 * 60, // storeing time in ms instead of minutes received from client
         black: time * 1000 * 60,
