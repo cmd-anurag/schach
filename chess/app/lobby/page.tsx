@@ -13,16 +13,16 @@ export default function Lobby() {
 
   const router = useRouter();
 
-  const {token, username, isLoading, logout} = useAuth();
+  const {username, logout, isLoggedIn} = useAuth();
   const {socket} = useSocket();
 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   useEffect(() => {
-    if(!isLoading && !token) {
+    if(!isLoggedIn) {
       router.push('/login');
     }
-  }, [router, token, isLoading]);
+  }, [router, isLoggedIn]);
 
   useEffect(() => {
     

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { ClientToServerEvents, ServerToClientEvents } from "@/types/socketEvents";
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 
 export interface SocketContextType {
@@ -14,31 +14,41 @@ export const SocketContext = createContext<SocketContextType | null>(null);
 
 export function SocketProvider({children} : {children: ReactNode}) {
     const { token } = useAuth();
-    const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        if(!token) {
-            socket?.disconnect();
-            setSocket(null);
-            setIsConnected(false);
-            return;
-        }
+    // 1. Create the socket instance using useMemo.
 
-        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-            auth: {token},
+    const socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = useMemo(() => {
+        if (!token) return null;
+
+        return io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
+            auth: { token },
             transports: ['websocket'],
-            autoConnect: true,
+            autoConnect: false, 
         });
-        newSocket.on('connect', () => setIsConnected(true));
-        newSocket.on('disconnect', () => setIsConnected(false));
-        setSocket(newSocket);
+    }, [token]);
+
+    // 2. Manage the connection lifecycle in useEffect
+    useEffect(() => {
+        if (!socket) return;
+
+        // Define listeners
+        const onConnect = () => setIsConnected(true);
+        const onDisconnect = () => setIsConnected(false);
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+
+        // Connect manually now that we are in the effect
+        socket.connect();
 
         return () => {
-            newSocket.disconnect();
+            // Cleanup listeners and disconnect
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            socket.disconnect();
         };
-
-    }, [token]);
+    }, [socket]);
 
     return (
         <SocketContext.Provider value={{socket, isConnected}}>
