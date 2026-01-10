@@ -1,20 +1,20 @@
 "use client";
 
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 export interface AuthContextType {
     token: string | null,
     username: string | null,
-    isLoggedIn: () => boolean,    login: (token: string, username: string) => void;
+    isLoggedIn: boolean,    
+    login: (token: string, username: string) => void;
     logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({children} : {children: ReactNode}) {
     const [token, setToken] = useState<string | null>(null);
     const [username, setUsername] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const savedToken = localStorage.getItem('token');
@@ -23,27 +23,31 @@ export function AuthProvider({children} : {children: ReactNode}) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(savedToken);
         setUsername(savedUsername);
-        setIsLoading(false);
     }, [])
 
-    const login = (token: string, username: string) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('username', username);
-        setToken(token);
-        setUsername(username);
-    }
+    const login = useCallback((newToken: string, newUsername: string) => {
+        try {
+            localStorage.setItem("token", newToken);
+            localStorage.setItem("username", newUsername);
+        } catch {
+            // swallow storage errors
+        }
+        setToken(newToken);
+        setUsername(newUsername);
+    }, []);
 
-    const logout = ()=> {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
+    const logout = useCallback(() => {
+        try {
+            localStorage.removeItem("token");
+            localStorage.removeItem("username");
+        } catch {
+            // swallow storage errors
+        }
         setToken(null);
         setUsername(null);
-    }
+    }, []);
     
-    const isLoggedIn = () => {
-      if (!isLoading && !token) return false;
-      return true;
-    }
+    const isLoggedIn = useMemo(() => !!token, [token]);
 
     return (
         <AuthContext.Provider value={{ token, username, isLoggedIn, login, logout }}>

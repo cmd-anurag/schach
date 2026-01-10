@@ -19,7 +19,7 @@ export default function Lobby() {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   useEffect(() => {
-    if(!isLoggedIn()) {
+    if(!isLoggedIn) {
       router.push('/login');
     }
   }, [router, isLoggedIn]);

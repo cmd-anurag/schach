@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useChessClock } from "@/hooks/useChessClock";
 import { useSocket } from "@/hooks/useSocket";
 import { ServerToClientEvents } from "@/types/socketEvents";
-import { Clock10, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock10, User } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ export default function Game() {
         socket.emit('join-room', { roomID });
     }, [socket, roomID]);
 
-    // Effect 3: Event handlers
+    // Effect 3: Socket Event handlers
     useEffect(() => {
         if (!socket) return;
 
@@ -93,6 +93,23 @@ export default function Game() {
         };
     }, [socket, color, sync, pause]);
 
+    // Effect 4. Keyboard Event handlers
+    useEffect(() => {
+        const onKeyDown = (e : KeyboardEvent) => {
+            if(e.key === "ArrowRight") {
+                setCursor(prev => Math.min(moveHistory.length, prev + 1))
+            }
+            else if(e.key == "ArrowLeft") {
+                setCursor(prev => Math.max(0, prev - 1));
+            }
+        }
+
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => window.removeEventListener('keydown', onKeyDown);
+
+    }, [moveHistory.length]);
+
 
     return (
         <div className="flex items-center justify-around">
@@ -126,14 +143,16 @@ export default function Game() {
             <div className="h-screen flex items-center">
               <Board boardState={{ moveHistory, cursor, turn, color }} roomID={roomID} />
             </div>
-            <div className="border w-[400px] h-[80vh]">
+            <div className="border w-[400px] h-[80vh] flex flex-col justify-between rounded-lg">
                 <MoveHistory
                     moves={moveHistory}
                     currentIndex={cursor}
                     onJump={(index: number) => setCursor(index)}
                 />
-                <button className="p-4 bg-blue-500 text-white cursor-pointer" onClick={() => setCursor(prev => Math.max(0, prev - 1))}>&lt;-</button>
-                <button className="p-4 bg-blue-500 text-white cursor-pointer" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}>-&gt;</button>
+                <div className="flex justify-center gap-4 p-10">
+                    <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.max(0, prev - 1))}><ArrowLeft /></button>
+                    <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}><ArrowRight /></button>
+                </div>
             </div>
         </div>
     );

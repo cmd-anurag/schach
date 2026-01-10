@@ -17,7 +17,7 @@ export function SocketProvider({children} : {children: ReactNode}) {
     const [isConnected, setIsConnected] = useState(false);
 
     // 1. Create the socket instance using useMemo.
-    // We use autoConnect: false to prevent side effects (connection) during the render phase.
+
     const socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = useMemo(() => {
         if (!token) return null;
 

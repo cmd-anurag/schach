@@ -6,8 +6,7 @@ import { useState } from "react";
 import { Square } from "chess.js";
 import { useSocket } from "@/hooks/useSocket";
 
-type BoardProps = {
-  boardState: {
+type BoardProps = {  boardState: {
     moveHistory: string[],
     cursor: number,
     color: 'white' | 'black' | null,
