@@ -1,7 +1,7 @@
 import { Room } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 
-// this function simply updates the clock based only on ELAPSED time since the last tick
+// this function simply updates the clock based only on ELAPSED time since the last turn started at
 function updateClock(room: Room) {
   if(!room.time.running || room.time.turnStartedAt === null) return;
 
@@ -75,6 +75,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       socket.emit("room-error", { message: "Room not found" });
       return;
     }
+    if(room.gameFinished) return;
+
     let playerColor = null;
     if(room.white.username === username) playerColor = "white";
     else if(room.black.username === username) playerColor = "black";
@@ -91,18 +93,23 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     try {
       updateClock(room);
       
-      // todo - game over if timeout happens
+      
       if(room.time.white === 0) {
         io.to(roomID).emit('game-over', {
           winner: 'black',
           reason: 'timeout',
         })
+
+        room.gameFinished = true;
         return;
+
       } else if(room.time.black === 0) {
         io.to(roomID).emit('game-over', {
           winner: 'white',
           reason: 'timeout',
-        })
+        });
+
+        room.gameFinished = true;
         return;
       }
       
@@ -119,7 +126,6 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       const nextTurn = room.turn === 'white'? "black" : 'white';
       room.turn = nextTurn;
       
-      // think about whether i set turnStartedAt of room again, its already updated in updateClock()
       room.time.turnStartedAt = Date.now();
 
       io.to(roomID).emit('move-made', {
@@ -139,7 +145,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
         io.to(roomID).emit('game-over', {
           winner: room.turn === 'black'? 'white' : 'black',
           reason: 'checkmate',
-        })
+        });
+        room.gameFinished = true;
         return;
       }
 
@@ -148,11 +155,12 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
         io.to(roomID).emit('game-over', {
           winner: 'draw',
           reason: 'draw',
-        })
+        });
+        room.gameFinished = true;
         return;
       }
 
-      // after game over send some kind of signa to server too to do post game stuff like saving it to DB
+      // after game over send some kind of signal to server too to do post game stuff like saving it to DB
       console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {
       socket.emit("move-error", {message: "Invalid move"});
@@ -165,6 +173,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
     if(!room) {
       return;
     }
+    if(room.gameFinished) return;
+
     let playerColor = null;
     if(room.white.username === username) playerColor = "white";
     else if(room.black.username === username) playerColor = "black";
@@ -172,11 +182,37 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, ro
       return;
     }
     updateClock(room);
-    console.log("Game Timeout event receieved by server");
     if(room.time.white === 0) {
       io.to(roomID).emit('game-over', {winner: 'black', reason: 'timeout'});
+      room.gameFinished = true;
     } else if(room.time.black === 0) {
       io.to(roomID).emit('game-over', {winner: 'white', reason: 'timeout'});
+      room.gameFinished = true;
     }
+  });
+
+  socket.on('resign-game', ({roomID}) => {
+    const room = rooms.get(roomID);
+    if(!room) return;
+    if(room.gameFinished) return;
+
+    let playerColor = null;
+    if(room.white.username === username) playerColor = "white";
+    else if(room.black.username === username) playerColor = "black";
+    if (!playerColor) {
+      return;
+    }
+
+    updateClock(room);
+
+    if(playerColor === 'white') {
+      io.to(roomID).emit('game-over', {winner: 'black', reason: 'resignation'});
+      room.gameFinished = true;
+    } else if(playerColor === 'black') {
+      io.to(roomID).emit('game-over', {winner: 'white', reason: 'resignation'});
+      room.gameFinished = true;
+    }
+
+    console.log(playerColor + ' resigned the game.');
   })
 }

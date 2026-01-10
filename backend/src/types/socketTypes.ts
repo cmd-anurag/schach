@@ -10,6 +10,7 @@ export type ClientToServerEvents = {
     'make-move' : (payload: {roomID: string, move: Move}) => void,
     'get-online-users' : () => void,
     'game-timeout' : (payload: {roomID: string}) => void,
+    'resign-game' : (payload: {roomID: string}) => void,
 }
 
 export type ServerToClientEvents = {

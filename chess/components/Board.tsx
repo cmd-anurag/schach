@@ -11,13 +11,14 @@ type BoardProps = {  boardState: {
     cursor: number,
     color: 'white' | 'black' | null,
     turn: 'white' | 'black',
+    gameFinished: boolean,
   },
   roomID: string,
 }
 
 export default function Board({ boardState, roomID } : BoardProps) {
   
-  const { moveHistory, cursor, turn, color} = boardState;
+  const { moveHistory, cursor, turn, color, gameFinished} = boardState;
   const {socket} = useSocket();
   
   // states for click-move logic
@@ -77,6 +78,7 @@ export default function Board({ boardState, roomID } : BoardProps) {
       piece
   }: SquareHandlerArgs) {
       // piece clicked to move
+      if(gameFinished) return;
 
       if (!moveFrom && piece) {
           // get the move options for the square
@@ -162,6 +164,9 @@ export default function Board({ boardState, roomID } : BoardProps) {
   }) => {
       // no dragging spare pieces
       if (isSparePiece) return false;
+
+      if(gameFinished) return false;
+      
 
       // must be live position
       if (cursor !== moveHistory.length) return false;

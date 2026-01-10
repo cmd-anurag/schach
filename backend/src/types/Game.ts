@@ -12,6 +12,7 @@ export type Room = {
     },
     turn: "white" | "black",
     chessInstance: Chess,
+    gameFinished: boolean,
     time: {
         white: number,
         black: number,
