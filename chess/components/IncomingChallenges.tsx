@@ -45,7 +45,7 @@ export default function IncomingChallenges() {
         return [...prev, { fromUsername, color, time, increment }]
       });
 
-      toast.info(`${fromUsername} challenged you for a battle of wits! Hope you stretched your brain.`, {
+      toast(`${fromUsername} challenged you for a battle of wits! Hope you stretched your brain.`, {
         action: {
           label: 'View All',
           onClick: () => setOpen(true),
@@ -59,12 +59,12 @@ export default function IncomingChallenges() {
       toast.info(`${by} rejected your challenge.`);
     }
 
-    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ roomID, color, opponent }) => {
+    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID, color, opponent }) => {
       toast.success(`Starting your game with ${opponent}...`);
 
       setTimeout(() => {
         console.log("redirect to playing area");
-        router.push(`/play/${roomID}`);
+        router.push(`/play/${gameID}`);
       }, 2000);
     }
 
@@ -78,7 +78,7 @@ export default function IncomingChallenges() {
       socket?.off('challenge-accepted', challengeAcceptedHandler);
     }
 
-  }, [socket]);
+  }, [socket, router]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

@@ -1,14 +1,14 @@
-import { randomBytes } from "crypto";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
-import { Room } from "../types/Game";
+import { Game } from "../types/Game";
 import { Chess } from "chess.js";
+import { randomBytes } from "crypto";
 
-/** Generate a random 6-char hex ID like "a3b9d0" */
-function generateRoomID() {
-  return randomBytes(3).toString("hex");
+// Generate a UUID v4 128-bit ID
+function generateGameID() {
+  return randomBytes(16).toString('base64url');
 }
 
-export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>, rooms: Map<string, Room>) {
+export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>, liveGames: Map<string, Game>) {
   const username = socket.data.user.username;
     
   // incoming challenge
@@ -94,15 +94,12 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
         break;
     }
 
-    // unique room ID
-    let roomID;
-    do {
-      roomID = generateRoomID();
-    } while (rooms.has(roomID));
+    // unique game ID
+    const gameID = generateGameID();
 
-    // construct room object
-    const room: Room = {
-      id: roomID,
+    // construct game object
+    const game: Game = {
+      id: gameID,
 
       white: {
         username: whiteUsername,
@@ -127,24 +124,24 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     };
 
     // store
-    rooms.set(roomID, room);
+    liveGames.set(gameID, game);
 
     // notify challenger
     io.to(challengerSocketId).emit("challenge-accepted", {
-      roomID,
+      gameID,
       color: whiteUsername === fromUsername ? "white" : "black",
       opponent: accepter,
     });
 
     // notify accepter
     socket.emit("challenge-accepted", {
-      roomID,
+      gameID,
       color: whiteUsername === accepter ? "white" : "black",
       opponent: fromUsername,
     });
 
     console.log(
-      `ROOM CREATED: ${roomID} — ${whiteUsername}(white) vs ${blackUsername}(black)`
+      `GAME CREATED: ${gameID} — ${whiteUsername}(white) vs ${blackUsername}(black)`
     );
   });
 

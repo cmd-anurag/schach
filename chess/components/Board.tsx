@@ -13,10 +13,10 @@ type BoardProps = {  boardState: {
     turn: 'white' | 'black',
     gameFinished: boolean,
   },
-  roomID: string,
+  gameID: string,
 }
 
-export default function Board({ boardState, roomID } : BoardProps) {
+export default function Board({ boardState, gameID } : BoardProps) {
   
   const { moveHistory, cursor, turn, color, gameFinished} = boardState;
   const {socket} = useSocket();
@@ -122,7 +122,7 @@ export default function Board({ boardState, roomID } : BoardProps) {
           // return early
           return;
       }
-      socket?.emit('make-move', { roomID, move });
+      socket?.emit('make-move', { gameID, move });
       // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});
@@ -146,7 +146,7 @@ export default function Board({ boardState, roomID } : BoardProps) {
       if (!move) {
           return false; // Invalid move
       }
-      socket?.emit('make-move', { roomID, move });
+      socket?.emit('make-move', { gameID, move });
       // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});

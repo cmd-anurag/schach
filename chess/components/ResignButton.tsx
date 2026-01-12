@@ -9,24 +9,37 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { useSocket } from "@/hooks/useSocket"
 import { Flag } from "lucide-react"
 
-export function ResignButton({roomID} : {roomID : string}) {
+export function ResignButton({gameID} : {gameID : string}) {
 
     const {socket} = useSocket();
     
     // Handler for resignation offer
    const resign = () => {
-        socket?.emit('resign-game', {roomID});
+        socket?.emit('resign-game', {gameID});
    }
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button title="Resign" size='lg' className="cursor-pointer border" variant="ghost"><Flag /></Button>
-      </AlertDialogTrigger>
+      <Tooltip>
+          <TooltipTrigger asChild>
+            <AlertDialogTrigger asChild>
+              <Button size='lg' className="cursor-pointer border" variant="ghost"><Flag /></Button>
+            </AlertDialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Resign the Game</p>
+          </TooltipContent>
+        </Tooltip>
+      
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Resign?</AlertDialogTitle>
