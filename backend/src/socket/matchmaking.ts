@@ -2,13 +2,14 @@ import { AppServer, PlayerSocket } from "../types/socketTypes";
 import { Game } from "../types/Game";
 import { Chess } from "chess.js";
 import { randomBytes } from "crypto";
+import { addGame } from "../game/store";
 
 // Generate a UUID v4 128-bit ID
 function generateGameID() {
   return randomBytes(16).toString('base64url');
 }
 
-export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>, liveGames: Map<string, Game>) {
+export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>) {
   const username = socket.data.user.username;
     
   // incoming challenge
@@ -124,7 +125,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     };
 
     // store
-    liveGames.set(gameID, game);
+    addGame(gameID, game);
 
     // notify challenger
     io.to(challengerSocketId).emit("challenge-accepted", {

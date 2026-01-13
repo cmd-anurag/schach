@@ -32,11 +32,11 @@ export function ResignButton({gameID} : {gameID : string}) {
       <Tooltip>
           <TooltipTrigger asChild>
             <AlertDialogTrigger asChild>
-              <Button size='lg' className="cursor-pointer border" variant="ghost"><Flag /></Button>
+              <Button size='lg' className="cursor-pointer border group" variant="ghost"><Flag className="group-hover:text-red-500" /></Button>
             </AlertDialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Resign the Game</p>
+            <p>Resign</p>
           </TooltipContent>
         </Tooltip>
       

@@ -1,6 +1,7 @@
 import { Game } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 import { updateClock } from "../utils/utils";
+import { deleteGame } from "./store";
 
 type EndGameResult = {
     winner: 'white' | 'black' | 'draw',
@@ -59,7 +60,8 @@ export function endGame(io: AppServer, game: Game, gameID: string, result: EndGa
     game.time.running = false;
     game.time.turnStartedAt = null,
 
-        io.to(gameID).emit('game-over', result);
+    io.to(gameID).emit('game-over', result);
 
+    deleteGame(gameID);
     // TODO - POST GAME CLEANUP
 }

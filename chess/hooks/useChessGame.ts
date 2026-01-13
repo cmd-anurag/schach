@@ -2,6 +2,10 @@ import { useMemo } from "react";
 import { Chess, Move, Piece, Square } from "chess.js";
 
 type Color = 'white' | 'black' | null;
+type MoveResult = {
+  type: 'normal' | 'promotion',
+  move: Move,
+}
 
 export function useChessGame(params: {
   moveHistory: string[],
@@ -42,17 +46,23 @@ export function useChessGame(params: {
     return chess.moves({square, verbose: true});
   }
 
-  function validateMove(from: string, to: string, promotion = "q"): Move | null {
+  function validateMove(from: string, to: string, promotion = "q"): MoveResult | null {
     try {
       const temp = new Chess(chess.fen());
       const mv = temp.move({ from, to, promotion });
-      return mv ?? null;
+      if(mv) {
+        return {
+          move: mv,
+          type: mv.isPromotion()? 'promotion' : 'normal', 
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   }
 
-  function tryMakeMove(from: string, to: string): Move | null {
+  function tryMakeMove(from: string, to: string): MoveResult | null {
     if (!isMyTurn) return null;
     return validateMove(from, to);
   }

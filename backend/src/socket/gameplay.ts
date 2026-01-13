@@ -1,15 +1,15 @@
 import { endGame, startGame } from "../game/lifecycle";
-import { Game } from "../types/Game";
+import { getGame } from "../game/store";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 import { updateClock, identifyEmitter, extractPlayerColor } from "../utils/utils";
 
 
-export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, liveGames: Map<string, Game>) {
+export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
   const username = socket.data.user.username;
 
   // handler for client trying to join a game 
   socket.on("join-game", ({ gameID }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
 
     if (!game) {
       socket.emit("join-error", { message: "Game not found" });
@@ -21,7 +21,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
   });
 
   socket.on("make-move", ({ gameID, move }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
 
     if (!game) {
       socket.emit("join-error", { message: "Game not found" });
@@ -59,13 +59,14 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
         game.time.black += game.time.increment;
       }
 
-      game.chessInstance.move(move);
+      const resultMove = game.chessInstance.move(move);
       const nextTurn = game.turn === 'white' ? "black" : 'white';
       game.turn = nextTurn;
       game.time.turnStartedAt = Date.now();
 
       io.to(gameID).emit('move-made', {
-        move,
+        move: resultMove,
+        moveID: move.clientMoveID,
         turn: nextTurn,
         byColor: playerColor,
         timeLeft: {
@@ -89,7 +90,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
         endGame(io, game, gameID, {winner: 'draw', reason: 'draw',});
         return;
       }
-      console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
+      // console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
 
     } catch {
       socket.emit("move-error", { message: "Invalid move" });
@@ -98,7 +99,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
 
   socket.on('game-timeout', ({ gameID }) => {
 
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
     if (!game || game.gameFinished) return;
 
     if (!extractPlayerColor(game, username)) return;
@@ -114,7 +115,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
   });
 
   socket.on('resign-game', ({ gameID }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
     if (!game) return;
     if (game.gameFinished) return;
 
@@ -128,7 +129,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
   });
 
   socket.on('offer-draw', ({ gameID }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
     if (!game || game.gameFinished) return;
     const playersInfo = identifyEmitter(game, username);
     if (!playersInfo) return;
@@ -142,7 +143,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
   });
 
   socket.on('accept-draw', ({ gameID }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
     if (!game || game.gameFinished) return;
     const playersInfo = identifyEmitter(game, username);
     if (!playersInfo) return;
@@ -158,7 +159,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
   });
 
   socket.on('reject-draw', ({ gameID }) => {
-    const game = liveGames.get(gameID);
+    const game = getGame(gameID);
+
     if (!game || game.gameFinished) return;
     const playersInfo = identifyEmitter(game, username);
     if (!playersInfo) return;
@@ -172,6 +174,5 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, li
       console.log(`${playersInfo.player.username} rejected a draw offer from ${playersInfo.opponent.username}`);
     }
   })
-
 
 }

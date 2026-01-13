@@ -1,13 +1,19 @@
 import { Move } from "chess.js"
 
 export type ChallengeColor = 'white' | 'black' | 'random';
+export type MoveIntent = {
+    from: string, 
+    to: string,
+    promotion?: 'q' | 'r' | 'b' | 'n',
+    clientMoveID: number,
+}
 
 export type ClientToServerEvents = {
     'challenge-user' : (payload: {toUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
     'accept-challenge' : (payload: {fromUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
     'reject-challenge' : (payload: {fromUsername: string}) => void,
     'join-game' : (payload: {gameID: string}) => void,
-    'make-move' : (payload: {gameID: string, move: Move}) => void,
+    'make-move' : (payload: {gameID: string, move: MoveIntent}) => void,
     'get-online-users' : () => void,
     'game-timeout' : (payload: {gameID: string}) => void,
     'resign-game' : (payload: {gameID: string}) => void,
@@ -38,6 +44,7 @@ export type ServerToClientEvents = {
 
     'move-made' : (payload: {
         move: Move,
+        moveID: number,
         turn: 'white' | 'black',
         byColor: 'white' | 'black',
         timeLeft: {
