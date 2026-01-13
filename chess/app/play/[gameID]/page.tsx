@@ -2,24 +2,26 @@
 
 import Board from "@/components/Board";
 import Clock from "@/components/Clock";
+import { DrawButton } from "@/components/DrawButton";
 import MoveHistory from "@/components/MoveHistory";
 import { ResignButton } from "@/components/ResignButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useChessClock } from "@/hooks/useChessClock";
 import { useSocket } from "@/hooks/useSocket";
-import { ServerToClientEvents } from "@/types/socketEvents";
+import { MoveIntent, ServerToClientEvents } from "@/types/socketEvents";
+import { Move } from "chess.js";
 import { ArrowLeft, ArrowRight, Clock10, User } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function Game() {
   
     const { socket } = useSocket();
     const { username: myUsername } = useAuth();
-    const { roomID } = useParams<{ roomID: string }>();
+    const { gameID } = useParams<{ gameID: string }>();
 
-    const { whiteTime, blackTime, sync, pause, timedOut } = useChessClock();
+    const { whiteTime, blackTime, sync, stop, timedOut } = useChessClock();
 
     const [oppUsername, setOppUsername] = useState<string | null>(null);
 
@@ -30,20 +32,34 @@ export default function Game() {
     const [turn, setTurn] = useState<'white' | 'black'>('white');
     const [gameFinished, setGameFinished] = useState(false);
 
+    // Optimism
+    const optimisticMoveRef = useRef<MoveIntent | null>(null);
+    const addOptimisticMove = (move: Move, moveID: number) => {
+        const intent: MoveIntent = {from: move.from, to: move.to, clientMoveID: moveID};
+
+        setMoveHistory(prev => {
+            const next = [...prev, move.san];
+            setCursor(next.length);
+            return next;
+        });
+
+        optimisticMoveRef.current = intent;
+    }
+
     // Effect 1 - When either player times out, inform the server
     useEffect(() => {
         if (!timedOut) return;
 
-        socket?.emit('game-timeout', { roomID });
+        socket?.emit('game-timeout', { gameID });
         console.log(timedOut);
-    }, [timedOut, socket, roomID]);
+    }, [timedOut, socket, gameID]);
 
-    // Effect 2: Join room only (runs once per socket/room)
+    // Effect 2: Join game only (runs once per socket/game)
     useEffect(() => {
-        if (!socket || !roomID) return;
+        if (!socket || !gameID) return;
 
-        socket.emit('join-room', { roomID });
-    }, [socket, roomID]);
+        socket.emit('join-game', { gameID });
+    }, [socket, gameID]);
 
     // Effect 3: Socket Event handlers
     useEffect(() => {
@@ -61,40 +77,49 @@ export default function Game() {
             }
         };
 
-        const handleMoveMade: ServerToClientEvents['move-made'] = ({ move, turn, byColor, timeLeft }) => {
+        const handleMoveMade: ServerToClientEvents['move-made'] = ({ move, moveID, turn, byColor, timeLeft }) => {
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
 
+            // optimistic move
             setMoveHistory(prev => {
-                const next = [...prev, move.san];
+                let next;
+                const currentOptimistic = optimisticMoveRef.current;
+
+                if(currentOptimistic && moveID === currentOptimistic.clientMoveID) {
+                    optimisticMoveRef.current = null;
+                    next = [...prev];
+                } else {
+                    next = [...prev, move.san];
+                }
                 setCursor(c => (c === prev.length ? next.length : c));
                 return next;
             });
             setTurn(turn);
         };
 
-        const handleGameOver: ServerToClientEvents['game-over'] = ({ winner, reason }) => {
-            pause();
+        const handleGameOver: ServerToClientEvents['game-over'] = ({ winner, reason, }) => {
+            stop();
             setGameFinished(true);
             toast.info(`Game Over ${winner} won! Reason - ${reason}`);
         };
 
-        const handleRoomError: ServerToClientEvents['room-error'] = ({ message }) => toast.error(message);
+        const handleJoinError: ServerToClientEvents['join-error'] = ({ message }) => toast.error(message);
         const handleMoveError: ServerToClientEvents['move-error'] = ({ message }) => toast.error(message);
 
         socket.on('game-start', handleGameStart);
         socket.on('move-made', handleMoveMade);
         socket.on('game-over', handleGameOver);
-        socket.on('room-error', handleRoomError);
+        socket.on('join-error', handleJoinError);
         socket.on('move-error', handleMoveError);
 
         return () => {
             socket.off('game-start', handleGameStart);
             socket.off('move-made', handleMoveMade);
             socket.off('game-over', handleGameOver);
-            socket.off('room-error', handleRoomError);
+            socket.off('join-error', handleJoinError);
             socket.off('move-error', handleMoveError);
         };
-    }, [socket, color, sync, pause]);
+    }, [socket, color, sync, stop]);
 
     // Effect 4. Keyboard Event handlers
     useEffect(() => {
@@ -116,7 +141,7 @@ export default function Game() {
 
     return (
         <div className="flex items-center justify-around">
-            <div className="border w-[300px] h-[40vh] p-2 rounded-lg flex justify-around flex-col">
+            <div className="border w-[400px] h-[40vh] p-2 rounded-lg flex justify-around flex-col">
                 {/* Opponent */}
                 <div>
                     <div className="flex items-center gap-4 p-2">
@@ -144,7 +169,7 @@ export default function Game() {
                 </div>
             </div>
             <div className="h-screen flex items-center">
-              <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} roomID={roomID} />
+              <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} gameID={gameID} addOptimisticMove={addOptimisticMove} />
             </div>
             <div className="border w-[400px] h-[80vh] flex flex-col justify-between rounded-lg">
                 <MoveHistory
@@ -153,7 +178,9 @@ export default function Game() {
                     onJump={(index: number) => setCursor(index)}
                 />
                 <div className="flex justify-center items-center gap-4 p-10">
-                    <ResignButton roomID={roomID} />
+                    
+                    <DrawButton gameID={gameID} />
+                    <ResignButton gameID={gameID} />
                     <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.max(0, prev - 1))}><ArrowLeft /></button>
                     <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}><ArrowRight /></button>
                 </div>

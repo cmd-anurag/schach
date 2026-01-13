@@ -2,9 +2,10 @@
 
 import { Chessboard, PieceDropHandlerArgs, SquareHandlerArgs } from "react-chessboard";
 import { useChessGame } from "@/hooks/useChessGame";
-import { useState } from "react";
-import { Square } from "chess.js";
+import { useRef, useState } from "react";
+import { Chess, Move, Square } from "chess.js";
 import { useSocket } from "@/hooks/useSocket";
+import PromotionSelection from "./PromotionSelection";
 
 type BoardProps = {  boardState: {
     moveHistory: string[],
@@ -13,10 +14,11 @@ type BoardProps = {  boardState: {
     turn: 'white' | 'black',
     gameFinished: boolean,
   },
-  roomID: string,
+  gameID: string,
+  addOptimisticMove: (move:Move, moveID: number) => void;
 }
 
-export default function Board({ boardState, roomID } : BoardProps) {
+export default function Board({ boardState, gameID, addOptimisticMove } : BoardProps) {
   
   const { moveHistory, cursor, turn, color, gameFinished} = boardState;
   const {socket} = useSocket();
@@ -24,13 +26,31 @@ export default function Board({ boardState, roomID } : BoardProps) {
   // states for click-move logic
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
-  
+
+  // promotion state
+  const [pendingPromotion, setPendingPromotion] = useState<null | Move>(null);
+  const promotionAnchor = pendingPromotion ? (document.querySelector(
+      `[data-square="${pendingPromotion.to}"]`
+    ) as HTMLElement | null) : null;
+
   const { position, isMyTurn, tryMakeMove, getLegalMovesFromSquare, getPiece } = useChessGame({
       moveHistory,
       cursor,
       myColor: color,
       turn,
   });
+  const moveIDCounter = useRef(0);
+
+  function finalizePromotion(piece: 'q' | 'r' | 'b' | 'n') {
+    if(!pendingPromotion) return;
+    
+    const clientMoveID = ++moveIDCounter.current;
+    const temp = new Chess(position);
+    const tempMove = temp.move({from: pendingPromotion.from, to: pendingPromotion.to, promotion: piece});
+    addOptimisticMove(tempMove, clientMoveID);
+    socket?.emit('make-move', {gameID, move: {from: pendingPromotion.from, to: pendingPromotion.to, promotion: piece, clientMoveID}});
+    setPendingPromotion(null);
+  }
   
   function getMoveOptions(square: Square) {
     
@@ -79,6 +99,7 @@ export default function Board({ boardState, roomID } : BoardProps) {
   }: SquareHandlerArgs) {
       // piece clicked to move
       if(gameFinished) return;
+      if(pendingPromotion) return;
 
       if (!moveFrom && piece) {
           // get the move options for the square
@@ -109,8 +130,8 @@ export default function Board({ boardState, roomID } : BoardProps) {
           return;
       }
 
-      const move = tryMakeMove(moveFrom, square);
-      if (!move) {
+      const moveResult = tryMakeMove(moveFrom, square);
+      if (!moveResult) {
           // if invalid, setMoveFrom and getMoveOptions
           const hasMoveOptions = getMoveOptions(square as Square);
 
@@ -122,7 +143,16 @@ export default function Board({ boardState, roomID } : BoardProps) {
           // return early
           return;
       }
-      socket?.emit('make-move', { roomID, move });
+
+      if(moveResult.type === 'promotion') {
+        setPendingPromotion(moveResult.move);
+        setMoveFrom('');
+        setOptionSquares({});
+        return;
+      }
+      const clientMoveID = ++moveIDCounter.current;
+      addOptimisticMove(moveResult.move, clientMoveID);
+      socket?.emit('make-move', { gameID, move: {from: moveFrom, to: square, clientMoveID} });
       // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});
@@ -141,12 +171,24 @@ export default function Board({ boardState, roomID } : BoardProps) {
           return false;
       }
 
-      const move = tryMakeMove(sourceSquare, targetSquare);
+      if(pendingPromotion) return false;
 
-      if (!move) {
+      const moveResult = tryMakeMove(sourceSquare, targetSquare);
+
+      if (!moveResult) {
           return false; // Invalid move
       }
-      socket?.emit('make-move', { roomID, move });
+
+      if(moveResult.type == 'promotion') {
+        setPendingPromotion(moveResult.move);
+        return false;
+      }
+
+      // optimism
+      const clientMoveID = ++moveIDCounter.current;
+      addOptimisticMove(moveResult.move, clientMoveID);
+      socket?.emit('make-move', { gameID, move: {from: sourceSquare, to: targetSquare, clientMoveID} });
+
       // clear moveFrom and optionSquares
       setMoveFrom('');
       setOptionSquares({});
@@ -162,9 +204,10 @@ export default function Board({ boardState, roomID } : BoardProps) {
       square: string | null;
       isSparePiece: boolean;
   }) => {
+    
       // no dragging spare pieces
       if (isSparePiece) return false;
-
+      if(pendingPromotion) return false;
       if(gameFinished) return false;
       
 
@@ -188,6 +231,7 @@ export default function Board({ boardState, roomID } : BoardProps) {
   
   return (
     <div className="max-w-180">
+        <PromotionSelection open={!!pendingPromotion} anchorElement={promotionAnchor} onSelect={finalizePromotion} onCancel={() => setPendingPromotion(null)} />
         <Chessboard options={chessboardOptions} />
     </div>
   );

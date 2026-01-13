@@ -1,218 +1,178 @@
-import { Room } from "../types/Game";
+import { endGame, startGame } from "../game/lifecycle";
+import { getGame } from "../game/store";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
+import { updateClock, identifyEmitter, extractPlayerColor } from "../utils/utils";
 
-// this function simply updates the clock based only on ELAPSED time since the last turn started at
-function updateClock(room: Room) {
-  if(!room.time.running || room.time.turnStartedAt === null) return;
 
-  const now = Date.now();
-  const elapsed = now - room.time.turnStartedAt;
-
-  if(room.turn === 'white') {
-    room.time.white = Math.max(0, room.time.white - elapsed);
-  } else {
-    room.time.black = Math.max(0, room.time.black - elapsed);
-  }
-}
-
-export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket, rooms: Map<string, Room>) {
+export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
   const username = socket.data.user.username;
 
-  // handler for client trying to join a room 
-  socket.on("join-room", ({roomID}) => {
-    const room = rooms.get(roomID);
+  // handler for client trying to join a game 
+  socket.on("join-game", ({ gameID }) => {
+    const game = getGame(gameID);
 
-    if (!room) {
-      socket.emit("room-error", { message: "Room not found" });
+    if (!game) {
+      socket.emit("join-error", { message: "Game not found" });
       return;
     }
 
-    let playerColor: 'white' | 'black' | null = null;
-    if(room.white.username === username) {
-      playerColor = 'white';
-      room.white.socketID = socket.id;
-    } else if(room.black.username === username) {
-      playerColor = 'black';
-      room.black.socketID = socket.id;
-    }
+    startGame(io, socket, gameID, game, username);
 
-    if(!playerColor) {
-      socket.emit('room-error', {message: 'You are not in this game'});
-      return;
-    }
-
-    socket.join(roomID);
-    updateClock(room);
-    room.time.turnStartedAt = Date.now();
-
-    socket.emit('game-start', {
-      roomID,
-      myColor: playerColor,
-      opponent: playerColor === 'white'? room.black.username : room.white.username,
-      turn: room.turn,
-      moveHistory: room.chessInstance.history(),
-      opponentConnected: playerColor === 'white'? !!room.black.socketID : !!room.white.socketID,
-      timeLeft: {
-        white: room.time.white,
-        black: room.time.black,
-        turnStartedAt: room.time.turnStartedAt,
-      }
-    });
-    
-    const opponentSocketId = playerColor === 'white'? room.black.socketID : room.white.socketID;
-    if(opponentSocketId) {
-      room.time.turnStartedAt = Date.now();
-      room.time.running = true;
-      io.to(opponentSocketId).emit('opponent-connected');
-    }
-
-    console.log(`User ${username} joined room ${roomID} as ${playerColor}`);
   });
 
-  socket.on("make-move", ({ roomID, move }) => {
-    const room = rooms.get(roomID);
-    if (!room) {
-      socket.emit("room-error", { message: "Room not found" });
+  socket.on("make-move", ({ gameID, move }) => {
+    const game = getGame(gameID);
+
+    if (!game) {
+      socket.emit("join-error", { message: "Game not found" });
       return;
     }
-    if(room.gameFinished) return;
+    if (game.gameFinished) return;
 
-    let playerColor = null;
-    if(room.white.username === username) playerColor = "white";
-    else if(room.black.username === username) playerColor = "black";
+    const playerColor = extractPlayerColor(game, username);
 
     if (!playerColor) {
       socket.emit("move-error", { message: "Not a participant" });
       return;
     }
 
-    if(room.turn !== playerColor) {
-      socket.emit("move-error", {message: "Not your turn"});
+    if (game.turn !== playerColor) {
+      socket.emit("move-error", { message: "Not your turn" });
       return;
     }
+
     try {
-      updateClock(room);
-      
-      
-      if(room.time.white === 0) {
-        io.to(roomID).emit('game-over', {
-          winner: 'black',
-          reason: 'timeout',
-        })
+      updateClock(game);
 
-        room.gameFinished = true;
+      if (game.time.white === 0) {
+        endGame(io, game, gameID, {winner: 'black', reason: 'White Timed Out!'});
         return;
-
-      } else if(room.time.black === 0) {
-        io.to(roomID).emit('game-over', {
-          winner: 'white',
-          reason: 'timeout',
-        });
-
-        room.gameFinished = true;
+      } else if (game.time.black === 0) {
+        endGame(io, game, gameID, {winner: 'white', reason: 'Black Timed Out!'});
         return;
       }
-      
+
       // increment
-      if(room.turn === 'white') {
-        room.time.white += room.time.increment;
+      if (game.turn === 'white') {
+        game.time.white += game.time.increment;
       } else {
-        room.time.black += room.time.increment;
+        game.time.black += game.time.increment;
       }
 
+      const resultMove = game.chessInstance.move(move);
+      const nextTurn = game.turn === 'white' ? "black" : 'white';
+      game.turn = nextTurn;
+      game.time.turnStartedAt = Date.now();
 
-      room.chessInstance.move(move);
-
-      const nextTurn = room.turn === 'white'? "black" : 'white';
-      room.turn = nextTurn;
-      
-      room.time.turnStartedAt = Date.now();
-
-      io.to(roomID).emit('move-made', {
-        move,
+      io.to(gameID).emit('move-made', {
+        move: resultMove,
+        moveID: move.clientMoveID,
         turn: nextTurn,
         byColor: playerColor,
         timeLeft: {
-          white: room.time.white,
-          black: room.time.black,
-          turnStartedAt: room.time.turnStartedAt ?? Date.now(),
+          white: game.time.white,
+          black: game.time.black,
+          turnStartedAt: game.time.turnStartedAt ?? Date.now(),
         }
       })
 
       // game over by checkmate 
-      if(room.chessInstance.isCheckmate()) {
-        
-        io.to(roomID).emit('game-over', {
-          winner: room.turn === 'black'? 'white' : 'black',
-          reason: 'checkmate',
-        });
-        room.gameFinished = true;
+      if (game.chessInstance.isCheckmate()) {
+        endGame(io, game, gameID, {
+          winner: game.turn === 'black' ? 'white' : 'black',
+          reason: 'Checkmate!',
+        })
         return;
       }
 
       // game draw
-      if(room.chessInstance.isDraw()) {
-        io.to(roomID).emit('game-over', {
-          winner: 'draw',
-          reason: 'draw',
-        });
-        room.gameFinished = true;
+      if (game.chessInstance.isDraw()) {
+        endGame(io, game, gameID, {winner: 'draw', reason: 'draw',});
         return;
       }
+      // console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
 
-      // after game over send some kind of signal to server too to do post game stuff like saving it to DB
-      console.log(`Move in ${roomID} by ${username} (${playerColor}) — turn -> ${room.turn}`);
     } catch {
-      socket.emit("move-error", {message: "Invalid move"});
+      socket.emit("move-error", { message: "Invalid move" });
     }
   });
 
-  socket.on('game-timeout', ({roomID}) => {
+  socket.on('game-timeout', ({ gameID }) => {
 
-    const room = rooms.get(roomID);
-    if(!room) {
-      return;
-    }
-    if(room.gameFinished) return;
+    const game = getGame(gameID);
+    if (!game || game.gameFinished) return;
 
-    let playerColor = null;
-    if(room.white.username === username) playerColor = "white";
-    else if(room.black.username === username) playerColor = "black";
-    if (!playerColor) {
-      return;
+    if (!extractPlayerColor(game, username)) return;
+
+    updateClock(game);
+
+    if (game.time.white === 0) {
+      endGame(io, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
+    } else if (game.time.black === 0) {
+      endGame(io, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
     }
-    updateClock(room);
-    if(room.time.white === 0) {
-      io.to(roomID).emit('game-over', {winner: 'black', reason: 'timeout'});
-      room.gameFinished = true;
-    } else if(room.time.black === 0) {
-      io.to(roomID).emit('game-over', {winner: 'white', reason: 'timeout'});
-      room.gameFinished = true;
-    }
+
   });
 
-  socket.on('resign-game', ({roomID}) => {
-    const room = rooms.get(roomID);
-    if(!room) return;
-    if(room.gameFinished) return;
+  socket.on('resign-game', ({ gameID }) => {
+    const game = getGame(gameID);
+    if (!game) return;
+    if (game.gameFinished) return;
 
-    let playerColor = null;
-    if(room.white.username === username) playerColor = "white";
-    else if(room.black.username === username) playerColor = "black";
-    if (!playerColor) {
-      return;
+    const playersInfo = identifyEmitter(game, username);
+    if (!playersInfo) return;
+
+    updateClock(game);
+    endGame(io, game, gameID, {winner: playersInfo.opponent.color, reason: `${playersInfo.player.color} resigned the game!`,});
+
+    console.log(playersInfo.player.username + ' resigned the game.');
+  });
+
+  socket.on('offer-draw', ({ gameID }) => {
+    const game = getGame(gameID);
+    if (!game || game.gameFinished) return;
+    const playersInfo = identifyEmitter(game, username);
+    if (!playersInfo) return;
+
+    const targetSocketId = playersInfo.opponent.socketID;
+    if (!targetSocketId) return;
+    game.drawOffer = playersInfo.player.color;
+
+    io.to(targetSocketId).emit('incoming-draw-offer');
+    console.log(playersInfo.player.username + ' offered a draw to ' + playersInfo.opponent.username);
+  });
+
+  socket.on('accept-draw', ({ gameID }) => {
+    const game = getGame(gameID);
+    if (!game || game.gameFinished) return;
+    const playersInfo = identifyEmitter(game, username);
+    if (!playersInfo) return;
+
+    updateClock(game);
+
+    if (game.drawOffer === playersInfo.opponent.color) {
+      game.drawOffer = null;
+      endGame(io, game, gameID, {winner: 'draw', reason: 'draw',});
     }
 
-    updateClock(room);
+    console.log(`${playersInfo.player.username} accepted draw offer from ${playersInfo.opponent.username}`);
+  });
 
-    if(playerColor === 'white') {
-      io.to(roomID).emit('game-over', {winner: 'black', reason: 'resignation'});
-      room.gameFinished = true;
-    } else if(playerColor === 'black') {
-      io.to(roomID).emit('game-over', {winner: 'white', reason: 'resignation'});
-      room.gameFinished = true;
+  socket.on('reject-draw', ({ gameID }) => {
+    const game = getGame(gameID);
+
+    if (!game || game.gameFinished) return;
+    const playersInfo = identifyEmitter(game, username);
+    if (!playersInfo) return;
+    const targetSocketId = playersInfo.opponent.socketID;
+
+    if (game.drawOffer === playersInfo.opponent.color) {
+      game.drawOffer = null;
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('draw-declined');
+      }
+      console.log(`${playersInfo.player.username} rejected a draw offer from ${playersInfo.opponent.username}`);
     }
-
-    console.log(playerColor + ' resigned the game.');
   })
+
 }
