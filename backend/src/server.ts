@@ -34,11 +34,6 @@ io.on("connection", (socket: PlayerSocket) => {
   registerDisconnectHandlers(io, socket,onlineUsers);
 });
 
-// Memory Monitor cause i'm too paranoid
-setInterval(() => {
-  const used = process.memoryUsage().heapUsed / 1024 / 1024
-  console.log(`heapUsed: ${used.toFixed(1)} MB`)
-}, 5000)
 
 httpserver.listen(PORT, "0.0.0.0", () => {
   console.log(`Socket.IO server running on http://0.0.0.0:${PORT}`);
