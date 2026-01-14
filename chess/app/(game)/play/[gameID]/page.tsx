@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function Game() {
-  
+
     const { socket } = useSocket();
     const { username: myUsername } = useAuth();
     const { gameID } = useParams<{ gameID: string }>();
@@ -35,7 +35,7 @@ export default function Game() {
     // Optimism
     const optimisticMoveRef = useRef<MoveIntent | null>(null);
     const addOptimisticMove = (move: Move, moveID: number) => {
-        const intent: MoveIntent = {from: move.from, to: move.to, clientMoveID: moveID};
+        const intent: MoveIntent = { from: move.from, to: move.to, clientMoveID: moveID };
 
         setMoveHistory(prev => {
             const next = [...prev, move.san];
@@ -77,7 +77,7 @@ export default function Game() {
             }
         };
 
-        const handleMoveMade: ServerToClientEvents['move-made'] = ({ move, moveID, turn, byColor, timeLeft }) => {
+        const handleMoveMade: ServerToClientEvents['move-made'] = ({ move, moveID, turn, timeLeft }) => {
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
 
             // optimistic move
@@ -85,7 +85,7 @@ export default function Game() {
                 let next;
                 const currentOptimistic = optimisticMoveRef.current;
 
-                if(currentOptimistic && moveID === currentOptimistic.clientMoveID) {
+                if (currentOptimistic && moveID === currentOptimistic.clientMoveID) {
                     optimisticMoveRef.current = null;
                     next = [...prev];
                 } else {
@@ -123,11 +123,11 @@ export default function Game() {
 
     // Effect 4. Keyboard Event handlers
     useEffect(() => {
-        const onKeyDown = (e : KeyboardEvent) => {
-            if(e.key === "ArrowRight") {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "ArrowRight") {
                 setCursor(prev => Math.min(moveHistory.length, prev + 1))
             }
-            else if(e.key == "ArrowLeft") {
+            else if (e.key == "ArrowLeft") {
                 setCursor(prev => Math.max(0, prev - 1));
             }
         }
@@ -140,49 +140,62 @@ export default function Game() {
 
 
     return (
-        <div className="flex items-center justify-around">
-            <div className="border w-[400px] h-[40vh] p-2 rounded-lg flex justify-around flex-col">
+        
+        <div className="flex flex-col lg:flex-row items-center justify-around gap-4 p-4 min-h-[80vh]">
+
+            {/* Player Info Section */}
+            {/* Width is 100% on mobile (w-full), 400px on large screens (lg:w-[400px]) */}
+            <div className="border w-full lg:w-[400px] h-auto lg:h-[40vh] p-4 rounded-lg flex flex-row lg:flex-col justify-around items-center lg:items-stretch">
                 {/* Opponent */}
-                <div>
-                    <div className="flex items-center gap-4 p-2">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 lg:gap-4">
                         <User fill={color === "white" ? "black" : "white"} />
-                        <span className="text-2xl font-bold">{oppUsername}</span>
+                        <span className="text-lg lg:text-xl font-bold">{oppUsername}</span>
                     </div>
-                    <div className="flex items-center gap-4 p-2">
-                        <Clock10 />
+                    <div className="flex items-center gap-2 lg:gap-4">
+                        <Clock10 size={20} />
                         <Clock timeMs={color === "white" ? blackTime : whiteTime} />
                     </div>
                 </div>
-                <div className="flex justify-center">
+
+                <div className="hidden lg:flex justify-center">
                     <h1 className="font-bold">VS</h1>
                 </div>
+
                 {/* Me */}
-                <div>
-                    <div className="flex items-center gap-4 p-2">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 lg:gap-4">
                         <User size={25} fill={color === "white" ? "white" : "black"} />
-                        <span className="text-2xl font-bold">{myUsername}</span>
+                        <span className="text-lg lg:text-xl font-bold">{myUsername}</span>
                     </div>
-                    <div className="flex items-center gap-4 p-2">
+                    <div className="flex items-center gap-2 lg:gap-4">
                         <Clock10 size={25} />
                         <Clock timeMs={color === "white" ? whiteTime : blackTime} />
                     </div>
                 </div>
             </div>
-            <div className="h-screen flex items-center">
-              <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} gameID={gameID} addOptimisticMove={addOptimisticMove} />
+
+            {/* Board Section */}
+            <div className="w-full max-w-[90vw] lg:max-w-none lg:h-[80vh] flex items-center justify-center">
+                <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} gameID={gameID} addOptimisticMove={addOptimisticMove} />
             </div>
-            <div className="border w-[400px] h-[80vh] flex flex-col justify-between rounded-lg">
-                <MoveHistory
-                    moves={moveHistory}
-                    currentIndex={cursor}
-                    onJump={(index: number) => setCursor(index)}
-                />
-                <div className="flex justify-center items-center gap-4 p-10">
-                    
+
+            {/* History Section */}
+            <div className="border w-full lg:w-[400px] h-[50vh] lg:h-[80vh] flex flex-col justify-between rounded-lg p-4 lg:p-10">
+                <div className="overflow-y-auto flex-grow">
+                    <MoveHistory
+                        moves={moveHistory}
+                        currentIndex={cursor}
+                        onJump={(index: number) => setCursor(index)}
+                    />
+                </div>
+
+                {/* Controls */}
+                <div className="flex justify-center items-center gap-2 lg:gap-4  bg-background">
                     <DrawButton gameID={gameID} />
                     <ResignButton gameID={gameID} />
-                    <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.max(0, prev - 1))}><ArrowLeft /></button>
-                    <button className="px-4 py-2 rounded-lg border cursor-pointer hover:bg-slate-800 duration-250" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}><ArrowRight /></button>
+                    <button className="px-3 py-2 rounded-lg border hover:bg-slate-800 transition-colors" onClick={() => setCursor(prev => Math.max(0, prev - 1))}><ArrowLeft /></button>
+                    <button className="px-3 py-2 rounded-lg border hover:bg-slate-800 transition-colors" onClick={() => setCursor(prev => Math.min(moveHistory.length, prev + 1))}><ArrowRight /></button>
                 </div>
             </div>
         </div>

@@ -59,7 +59,7 @@ export default function IncomingChallenges() {
       toast.info(`${by} rejected your challenge.`);
     }
 
-    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID, color, opponent }) => {
+    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID, opponent }) => {
       toast.success(`Starting your game with ${opponent}...`);
 
       setTimeout(() => {
