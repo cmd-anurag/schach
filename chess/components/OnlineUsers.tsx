@@ -1,4 +1,4 @@
-import ChallengeModal from "./ChallengeModal";
+import ChallengeModal from "./challenges/ChallengeModal";
 
 export default function OnlineUsers({users} : {users: string[]}) {
   return (

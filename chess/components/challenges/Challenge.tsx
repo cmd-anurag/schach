@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react"
-import { Button } from "./ui/button"
+import { Button } from "@/components/ui/button"
 import { useSocket } from "@/hooks/useSocket"
 import { ChallengeColor } from "@/types/socketEvents";
 

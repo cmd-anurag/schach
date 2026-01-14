@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation";
 import OnlineUsers from "@/components/OnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/hooks/useSocket";
-import IsOnline from "@/components/IsOnline";
-import IncomingChallenges from "@/components/IncomingChallenges";
 
 
 export default function Lobby() {
 
   const router = useRouter();
 
-  const {username, logout, isLoggedIn, loading} = useAuth();
+  const {username, isLoggedIn, loading} = useAuth();
   const {socket} = useSocket();
 
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
@@ -46,19 +44,11 @@ export default function Lobby() {
 
   }, [socket]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  }
+  
 
   return (
     <div>
-      <div className="flex justify-end gap-2 items-center">
-        <IncomingChallenges />
-        <IsOnline />
-        <p className="font-bold">{username}</p>
-        <button onClick={handleLogout} className="bg-red-500 text-white px-2 py-1 cursor-pointer rounded-lg">Logout</button>
-      </div>
+      
       <div>
 
       <OnlineUsers users={onlineUsers.filter((u) => u !== username)} />
