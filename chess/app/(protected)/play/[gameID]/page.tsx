@@ -1,16 +1,16 @@
 "use client";
 
 import Board from "@/components/Board";
-import Clock from "@/components/Clock";
 import { DrawButton } from "@/components/DrawButton";
 import MoveHistory from "@/components/MoveHistory";
+import PlayersInfo from "@/components/PlayersInfo";
 import { ResignButton } from "@/components/ResignButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useChessClock } from "@/hooks/useChessClock";
 import { useSocket } from "@/hooks/useSocket";
 import { MoveIntent, ServerToClientEvents } from "@/types/socketEvents";
 import { Move } from "chess.js";
-import { ArrowLeft, ArrowRight, Clock10, User } from "lucide-react";
+import { ArrowLeft, ArrowRight} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -101,10 +101,17 @@ export default function Game() {
         const handleGameOver: ServerToClientEvents['game-over'] = ({ winner, reason, }) => {
             stop();
             setGameFinished(true);
-            toast.info(`Game Over ${winner} won! Reason - ${reason}`);
+            if(winner === 'draw') {
+                toast(`The dust settles and its a DRAW by ${reason}`)
+            } else {
+                toast(`${winner} wins by ${reason}`);
+            }
         };
 
-        const handleJoinError: ServerToClientEvents['join-error'] = ({ message }) => toast.error(message);
+        const handleJoinError: ServerToClientEvents['join-error'] = ({ message }) => {
+            toast.error(message)
+            
+        };
         const handleMoveError: ServerToClientEvents['move-error'] = ({ message }) => toast.error(message);
 
         socket.on('game-start', handleGameStart);
@@ -144,38 +151,8 @@ export default function Game() {
         
         <div className="flex flex-col lg:flex-row items-center justify-around gap-4 p-4 min-h-[80vh]">
 
-            {/* Player Info Section */}
-            {/* Width is 100% on mobile (w-full), 400px on large screens (lg:w-[400px]) */}
-            <div className="border w-full lg:w-[400px] h-auto lg:h-[40vh] p-4 rounded-lg flex flex-row lg:flex-col justify-around items-center lg:items-stretch">
-                {/* Opponent */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 lg:gap-4">
-                        <User fill={color === "white" ? "black" : "white"} />
-                        <span className="text-lg lg:text-xl font-bold">{oppUsername}</span>
-                    </div>
-                    <div className="flex items-center gap-2 lg:gap-4">
-                        <Clock10 size={20} />
-                        <Clock timeMs={color === "white" ? blackTime : whiteTime} />
-                    </div>
-                </div>
-
-                <div className="hidden lg:flex justify-center">
-                    <h1 className="font-bold">VS</h1>
-                </div>
-
-                {/* Me */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 lg:gap-4">
-                        <User size={25} fill={color === "white" ? "white" : "black"} />
-                        <span className="text-lg lg:text-xl font-bold">{myUsername}</span>
-                    </div>
-                    <div className="flex items-center gap-2 lg:gap-4">
-                        <Clock10 size={25} />
-                        <Clock timeMs={color === "white" ? whiteTime : blackTime} />
-                    </div>
-                </div>
-            </div>
-
+            <PlayersInfo myUsername={myUsername ?? ''}  oppUsername={oppUsername ?? ''} whiteTime={whiteTime} blackTime={blackTime} myColor={color ?? 'white'}/>
+        
             {/* Board Section */}
             <div className="w-full max-w-[90vw] lg:max-w-none lg:h-[80vh] flex items-center justify-center">
                 <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} gameID={gameID} addOptimisticMove={addOptimisticMove} />

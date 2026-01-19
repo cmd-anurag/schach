@@ -59,13 +59,13 @@ export default function IncomingChallenges() {
       toast.info(`${by} rejected your challenge.`);
     }
 
-    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID, opponent }) => {
-      toast.success(`Starting your game with ${opponent}...`);
-
-      setTimeout(() => {
-        console.log("redirect to playing area");
-        router.push(`/play/${gameID}`);
-      }, 2000);
+    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID }) => {
+      // toast.success(`Starting your game with ${opponent}...`);
+      // setTimeout(() => {
+      //   console.log("redirect to playing area");
+      //   router.push(`/play/${gameID}`);
+      // }, 2000);
+      router.push(`/play/${gameID}`);
     }
 
     socket?.on('incoming-challenge', incomingChallengeHandler);

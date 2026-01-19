@@ -29,7 +29,7 @@ export function authMiddleware(
 
   try {
     const payload = jwt.verify(token, secret) as JwtPayload & {
-      id: string;
+      id: number;
       username: string;
     };
 

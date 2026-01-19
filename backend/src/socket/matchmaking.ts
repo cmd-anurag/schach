@@ -4,12 +4,12 @@ import { Chess } from "chess.js";
 import { randomBytes } from "crypto";
 import { addGame } from "../game/store";
 
-// Generate a UUID v4 128-bit ID
+
 function generateGameID() {
   return randomBytes(16).toString('base64url');
 }
 
-export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>) {
+export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, {userID: number, socketID: string}>) {
   const username = socket.data.user.username;
     
   // incoming challenge
@@ -35,7 +35,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       return;
     }
 
-    const targetSocketId = onlineUsers.get(toUsername);
+    const targetSocketId = onlineUsers.get(toUsername)?.socketID;
 
     if (!targetSocketId) {
       socket.emit("challenge-error", { message: "User is not online" });
@@ -63,7 +63,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     }
 
     const accepter = username;
-    const challengerSocketId = onlineUsers.get(fromUsername);
+    const challengerSocketId = onlineUsers.get(fromUsername)?.socketID;
 
     if (!challengerSocketId) {
       socket.emit("challenge-error", { message: "Challenger went offline" });
@@ -98,23 +98,29 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
     // unique game ID
     const gameID = generateGameID();
 
+    const whiteUser = onlineUsers.get(whiteUsername);
+    const blackUser = onlineUsers.get(blackUsername);
+
     // construct game object
     const game: Game = {
       id: gameID,
 
       white: {
+        userID: whiteUser?.userID || null,
         username: whiteUsername,
-        socketID: onlineUsers.get(whiteUsername) || null,
+        socketID: whiteUser?.socketID || null,
       },
 
       black: {
+        userID: blackUser?.userID || null,
         username: blackUsername,
-        socketID: onlineUsers.get(blackUsername) || null,
+        socketID: blackUser?.socketID || null,
       },
 
       turn: "white",
       chessInstance: new Chess(),
       gameFinished: false,
+      gameStartedAt: Date.now(),
       time: {
         white: time * 1000 * 60, // storeing time in ms instead of minutes received from client
         black: time * 1000 * 60,
@@ -150,7 +156,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
   // reject challenge
   //
   socket.on("reject-challenge", ({ fromUsername }) => {
-    const challengerSocketId = onlineUsers.get(fromUsername);
+    const challengerSocketId = onlineUsers.get(fromUsername)?.socketID;
 
     if (challengerSocketId) {
       io.to(challengerSocketId).emit("challenge-rejected", {

@@ -12,4 +12,35 @@ model User {
   username      String   @unique
   passwordHash  String
   createdAt     DateTime @default(now())
+
+  gamesAsWhite FinishedGames[] @relation("WhiteGames")
+  gamesAsBlack FinishedGames[] @relation("BlackGames")
+}
+
+model FinishedGames {
+  gameID          String @id
+  
+  whiteID Int
+  blackID Int
+
+  white User @relation("WhiteGames", fields: [whiteID], references: [id])
+  black User @relation("BlackGames", fields: [blackID], references: [id])
+
+  timeWhite Int @default(0)
+  timeBlack Int @default(0)
+  increment Int @default(0)
+
+  result GameResult
+  reason String
+  moves String[]
+  finalFEN String
+
+  startedAt DateTime
+  endedAt DateTime @default(now())
+}
+
+enum GameResult {
+  WHITE
+  BLACK
+  DRAW
 }
