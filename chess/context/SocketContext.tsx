@@ -19,7 +19,7 @@ function getSocket() {
     socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
       withCredentials: true,
       transports: ["websocket"],
-      autoConnect: false,
+      autoConnect: true,
     });
   }
   return socketInstance;
