@@ -5,13 +5,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { User } from "lucide-react";
 
 export default function Toolbar() {
-    const { username } = useAuth();
+    const { user } = useAuth();
     return (
         <div className="flex justify-end gap-4 items-center py-4 px-16">
             <IncomingChallenges />
             <IsOnline />
             <User />
-            <p className="font-bold">{username}</p>
+            <p className="font-bold">{user?.username}</p>
         </div>
     )
 }

@@ -18,7 +18,8 @@ import { toast } from "sonner";
 export default function Game() {
 
     const { socket } = useSocket();
-    const { username: myUsername } = useAuth();
+    const { user } = useAuth();
+    const myUsername = user?.username;
     const { gameID } = useParams<{ gameID: string }>();
 
     const { whiteTime, blackTime, sync, stop, timedOut } = useChessClock();

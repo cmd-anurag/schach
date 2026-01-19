@@ -1,28 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation";
 import OnlineUsers from "@/components/OnlineUsers";
-import { useAuth } from "@/hooks/useAuth";
 import { useSocket } from "@/hooks/useSocket";
+import { useAuth } from "@/hooks/useAuth";
 
 
 export default function Lobby() {
 
-  const router = useRouter();
 
-  const {username, isLoggedIn, loading} = useAuth();
   const {socket} = useSocket();
-
+  const {user} = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-
-  useEffect(() => {
-    if(loading) return;
-
-    if(!isLoggedIn) {
-      router.push('/login');
-    }
-  }, [router, isLoggedIn, loading]);
 
   useEffect(() => {
     
@@ -43,15 +32,11 @@ export default function Lobby() {
     }
 
   }, [socket]);
-
   
-
   return (
     <div>
-      
       <div>
-
-      <OnlineUsers users={onlineUsers.filter((u) => u !== username)} />
+      <OnlineUsers users={onlineUsers.filter((u) => u !== user?.username)} />
       </div>
     </div>
   )

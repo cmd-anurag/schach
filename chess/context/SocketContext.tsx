@@ -1,58 +1,61 @@
 "use client";
-
-import { useAuth } from "@/hooks/useAuth";
-import { ClientToServerEvents, ServerToClientEvents } from "@/types/socketEvents";
-import { createContext, ReactNode, useEffect, useState, useMemo } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { ClientToServerEvents, ServerToClientEvents } from "@/types/socketEvents";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface SocketContextType {
-    socket: Socket<ServerToClientEvents, ClientToServerEvents> | null,
-    isConnected: boolean,
+  socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
+  isConnected: boolean;
 }
 
 export const SocketContext = createContext<SocketContextType | null>(null);
 
-export function SocketProvider({children} : {children: ReactNode}) {
-    const { token } = useAuth();
-    const [isConnected, setIsConnected] = useState(false);
+// Socket SINGLETON
+let socketInstance: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
-    // 1. Create the socket instance using useMemo.
+function getSocket() {
+  if (!socketInstance) {
+    socketInstance = io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
+      withCredentials: true,
+      transports: ["websocket"],
+      autoConnect: false,
+    });
+  }
+  return socketInstance;
+}
 
-    const socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = useMemo(() => {
-        if (!token) return null;
+export function SocketProvider({ children }: { children: ReactNode }) {
+  const { isLoggedIn, loading } = useAuth();
+  const socket = getSocket();
+  const [isConnected, setIsConnected] = useState(false);
 
-        return io(process.env.NEXT_PUBLIC_SOCKET_URL as string, {
-            auth: { token },
-            transports: ['websocket'],
-            autoConnect: false, 
-        });
-    }, [token]);
+  useEffect(() => {
+    
+    if (loading) return;
 
-    // 2. Manage the connection lifecycle in useEffect
-    useEffect(() => {
-        if (!socket) return;
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
 
-        // Define listeners
-        const onConnect = () => setIsConnected(true);
-        const onDisconnect = () => setIsConnected(false);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
 
-        socket.on('connect', onConnect);
-        socket.on('disconnect', onDisconnect);
+   
+    if (isLoggedIn) {
+      socket.connect();
+    } else {
+      socket.disconnect();
+    }
 
-        // Connect manually now that we are in the effect
-        socket.connect();
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [isLoggedIn, loading, socket]);
 
-        return () => {
-            // Cleanup listeners and disconnect
-            socket.off('connect', onConnect);
-            socket.off('disconnect', onDisconnect);
-            socket.disconnect();
-        };
-    }, [socket]);
-
-    return (
-        <SocketContext.Provider value={{socket, isConnected}}>
-            {children}
-        </SocketContext.Provider>
-    )
+  return (
+    <SocketContext.Provider value={{ socket, isConnected }}>
+      {children}
+    </SocketContext.Provider>
+  );
 }
