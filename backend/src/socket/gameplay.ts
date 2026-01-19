@@ -45,10 +45,10 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
       updateClock(game);
 
       if (game.time.white === 0) {
-        endGame(io, game, gameID, {winner: 'black', reason: 'White Timed Out!'});
+        endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed Out!'});
         return;
       } else if (game.time.black === 0) {
-        endGame(io, game, gameID, {winner: 'white', reason: 'Black Timed Out!'});
+        endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed Out!'});
         return;
       }
 
@@ -78,7 +78,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
 
       // game over by checkmate 
       if (game.chessInstance.isCheckmate()) {
-        endGame(io, game, gameID, {
+        endGame(io, socket, game, gameID, {
           winner: game.turn === 'black' ? 'white' : 'black',
           reason: 'Checkmate!',
         })
@@ -87,7 +87,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
 
       // game draw
       if (game.chessInstance.isDraw()) {
-        endGame(io, game, gameID, {winner: 'draw', reason: 'draw',});
+        endGame(io, socket, game, gameID, {winner: 'draw', reason: 'draw',});
         return;
       }
       // console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
@@ -107,9 +107,9 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
     updateClock(game);
 
     if (game.time.white === 0) {
-      endGame(io, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
+      endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
     } else if (game.time.black === 0) {
-      endGame(io, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
+      endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
     }
 
   });
@@ -123,7 +123,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
     if (!playersInfo) return;
 
     updateClock(game);
-    endGame(io, game, gameID, {winner: playersInfo.opponent.color, reason: `${playersInfo.player.color} resigned the game!`,});
+    endGame(io, socket, game, gameID, {winner: playersInfo.opponent.color, reason: `${playersInfo.player.color} resigned the game!`,});
 
     console.log(playersInfo.player.username + ' resigned the game.');
   });
@@ -152,10 +152,10 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
 
     if (game.drawOffer === playersInfo.opponent.color) {
       game.drawOffer = null;
-      endGame(io, game, gameID, {winner: 'draw', reason: 'draw',});
+      endGame(io, socket, game, gameID, {winner: 'draw', reason: 'draw',});
+      console.log(`${playersInfo.player.username} accepted draw offer from ${playersInfo.opponent.username}`);
     }
 
-    console.log(`${playersInfo.player.username} accepted draw offer from ${playersInfo.opponent.username}`);
   });
 
   socket.on('reject-draw', ({ gameID }) => {

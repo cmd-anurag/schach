@@ -3,16 +3,19 @@ import { Chess, Move } from "chess.js"
 export type Game = {
     id: string,
     white: {
+        userID: number | null,
         username: string,
         socketID: string | null,
     },
     black: {
+        userID: number | null,
         username: string,
         socketID: string | null,
     },
     turn: "white" | "black",
     chessInstance: Chess,
     gameFinished: boolean,
+    gameStartedAt: number,
     time: {
         white: number,
         black: number,

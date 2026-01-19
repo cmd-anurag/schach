@@ -75,7 +75,7 @@ export interface InterServerEvents {}
 
 export interface SocketData {
     user: {
-        id: string,
+        id: number,
         username: string;
     };
 }

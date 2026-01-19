@@ -7,6 +7,11 @@ type EndGameResult = {
     winner: 'white' | 'black' | 'draw',
     reason: string,
 }
+const winnerMap = {
+    white: 'WHITE',
+    black: 'BLACK',
+    draw: 'DRAW',
+} as const;
 
 export function startGame(io: AppServer, socket: PlayerSocket, gameID: string, game: Game, username: string) {
 
@@ -52,7 +57,7 @@ export function startGame(io: AppServer, socket: PlayerSocket, gameID: string, g
     console.log(`${username} (${playerColor}) joined game ${gameID}`);
 }
 
-export function endGame(io: AppServer, game: Game, gameID: string, result: EndGameResult) {
+export function endGame(io: AppServer, socket: PlayerSocket, game: Game, gameID: string, result: EndGameResult) {
 
     if (game.gameFinished) return;
 
@@ -62,6 +67,71 @@ export function endGame(io: AppServer, game: Game, gameID: string, result: EndGa
 
     io.to(gameID).emit('game-over', result);
 
+    saveGameToDB({
+        gameID: game.id,
+        whiteID: game.white.userID,
+        blackID: game.black.userID,
+        result: winnerMap[result.winner],
+        reason: result.reason,
+        moves: game.chessInstance.history(),
+        finalFEN: game.chessInstance.fen(),
+        time: {
+            white: game.time.white,
+            black: game.time.black,
+            increment: game.time.increment,
+        },
+        startedAt: game.gameStartedAt,
+        endedAt: Date.now()
+    });
+
     deleteGame(gameID);
-    // TODO - POST GAME CLEANUP
+}
+
+type SaveGamePayload = {
+    gameID: string,
+    whiteID: number | null,
+    blackID: number | null,
+    result : 'WHITE' | 'BLACK' | 'DRAW',
+    reason: string,
+    moves: string[],
+    finalFEN: string,
+    time: {
+        white: number,
+        black: number,
+        increment: number,
+    }
+    startedAt: number,
+    endedAt: number,
+}
+
+async function saveGameToDB(payload : SaveGamePayload) {
+    const baseURL = process.env.NEXT_BACKEND_URL;
+
+    const requestBody = {
+        gameID: payload.gameID,
+        whiteID: payload.whiteID,
+        blackID: payload.blackID,
+        result: payload.result,
+        reason: payload.reason,
+        moves: payload.moves,
+        finalFEN: payload.finalFEN,
+        time: payload.time,
+        startedAt: payload.startedAt,
+        endedAt: payload.endedAt,
+    }
+    try {
+        const res = await fetch(`${baseURL}/api/savegame`, {
+            method: 'POST',
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result: any = await res.json();
+        if(res.ok) {
+            console.log('Saved the game to database');
+        } else {
+            console.log(result.message);
+        }
+    } catch(err) {
+        console.log(err);
+    }
 }

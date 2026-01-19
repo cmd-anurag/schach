@@ -7,6 +7,7 @@ type MoveResult = {
   move: Move,
 }
 
+// TODO FOR FUTURE - accept initialfen as a param to use this hook for any arbitrary position
 export function useChessGame(params: {
   moveHistory: string[],
   cursor: number,

@@ -42,10 +42,20 @@ export async function POST(req: Request){
             {expiresIn: "30d"}
         );
 
-        return NextResponse.json(
-            {success: true, message: 'Logged in', token},
+        const res = NextResponse.json(
+            {success: true, message: 'Logged in'},
             {status: 200},
         );
+
+        res.cookies.set('session', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30,
+        })
+
+        return res; 
     } catch(error) {
         console.log(error);
         return NextResponse.json(

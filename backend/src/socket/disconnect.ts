@@ -1,7 +1,6 @@
-import { Game } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 
-export function registerDisconnectHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, string>) {
+export function registerDisconnectHandlers(io: AppServer, socket: PlayerSocket, onlineUsers: Map<string, {userID: number, socketID: string}>) {
   const username = socket.data.user.username;
 
   socket.on("disconnect", () => {
