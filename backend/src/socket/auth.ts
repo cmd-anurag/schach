@@ -9,6 +9,7 @@ export function authMiddleware(
   socket: PlayerSocket,
   next: (err?: Error) => void
 ) {
+  console.log("WS COOKIE HEADER:", socket.request.headers.cookie);
   const rawCookie = socket.request.headers.cookie;
 
   if (!rawCookie) {
