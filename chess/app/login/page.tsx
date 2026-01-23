@@ -36,6 +36,8 @@ export default function LoginPage() {
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
+    if (processing) return;
+
     setProcessing(true);
     setError(null);
 
@@ -152,8 +154,8 @@ export default function LoginPage() {
 
               {/* Submit Button */}
               <Button
+                type="submit"
                 disabled={processing}
-                onClick={handleLogin}
                 className="group relative h-12 w-full overflow-hidden rounded-xl bg-white text-black font-semibold transition-all hover:bg-blue-50 hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:hover:scale-100"
               >
                 <div className="relative z-10 flex items-center justify-center gap-2">
