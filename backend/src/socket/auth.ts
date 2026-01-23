@@ -1,5 +1,4 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
-import cookie from "cookie";
+import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { PlayerSocket } from "../types/socketTypes";
 
@@ -9,30 +8,27 @@ export function authMiddleware(
   socket: PlayerSocket,
   next: (err?: Error) => void
 ) {
-  console.log("WS COOKIE HEADER:", socket.request.headers.cookie);
-  const rawCookie = socket.request.headers.cookie;
+  const token = socket.handshake.auth?.token;
 
-  if (!rawCookie) {
+  if (!token || typeof token !== "string") {
     return next(new Error("not authenticated"));
   }
 
-  const cookies = cookie.parse(rawCookie);
-  const token = cookies.session;
-
-  if (!token) {
-    return next(new Error("not authenticated"));
-  }
-
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.WS_JWT_SECRET;
   if (!secret) {
-    return next(new Error("Server misconfigured: JWT_SECRET missing"));
+    return next(new Error("Server misconfigured: WS_JWT_SECRET missing"));
   }
 
   try {
-    const payload = jwt.verify(token, secret) as JwtPayload & {
+    const payload = jwt.verify(token, secret) as {
       id: number;
       username: string;
+      type: string;
     };
+
+    if (payload.type !== "ws") {
+      return next(new Error("invalid token type"));
+    }
 
     socket.data.user = {
       id: payload.id,
@@ -40,7 +36,7 @@ export function authMiddleware(
     };
 
     next();
-  } catch (err) {
+  } catch {
     return next(new Error("invalid token"));
   }
 }

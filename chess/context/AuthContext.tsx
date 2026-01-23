@@ -8,6 +8,7 @@ type User = {
 
 export const AuthContext = createContext<{
   user: User | null;
+  wsToken: string | null,
   loading: boolean;
   isLoggedIn: boolean;
   refreshUser: () => Promise<void>;
@@ -15,15 +16,26 @@ export const AuthContext = createContext<{
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [wsToken, setWsToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
     try {
       const res = await fetch("/api/me", { credentials: "include" });
-      const data = res.ok ? await res.json() : null;
-      setUser(data);
+
+      if (!res.ok) {
+        setUser(null);
+        setWsToken(null);
+        return;
+      }
+
+      const { user, wsToken } = await res.json();
+
+      setUser(user);
+      setWsToken(wsToken);
     } catch {
       setUser(null);
+      setWsToken(null);
     } finally {
       setLoading(false);
     }
@@ -37,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        wsToken,
         loading,
         isLoggedIn: !!user,
         refreshUser,
