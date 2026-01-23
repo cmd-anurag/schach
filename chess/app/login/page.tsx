@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CircleAlert, Loader2 } from "lucide-react";
@@ -30,9 +30,11 @@ export default function LoginPage() {
   const [password, setP] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [loginSucceeded, setLoginSucceeded] = useState(false);
+
 
   const router = useRouter();
-  const {refreshUser} = useAuth();
+  const { refreshUser, loading, isLoggedIn } = useAuth();
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -57,13 +59,19 @@ export default function LoginPage() {
       }
       // to make auth context re hit the api/me endpoint to check auth status. 
       await refreshUser();
-      router.replace("/lobby");
+      setLoginSucceeded(true);
     } catch {
       setError("Network error");
     } finally {
       setProcessing(false);
     }
   }
+
+  useEffect(() => {
+  if (!loading && isLoggedIn && loginSucceeded) {
+    router.replace("/lobby");
+  }
+}, [loading, isLoggedIn, loginSucceeded, router]);
 
 
   return (
