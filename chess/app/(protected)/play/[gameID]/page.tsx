@@ -10,7 +10,7 @@ import { useChessClock } from "@/hooks/useChessClock";
 import { useSocket } from "@/hooks/useSocket";
 import { MoveIntent, ServerToClientEvents } from "@/types/socketEvents";
 import { Move } from "chess.js";
-import { ArrowLeft, ArrowRight} from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -34,9 +34,15 @@ export default function Game() {
     const [gameFinished, setGameFinished] = useState(false);
 
     // Optimism
+    const moveIDCounter = useRef(0);
     const optimisticMoveRef = useRef<MoveIntent | null>(null);
-    const addOptimisticMove = (move: Move, moveID: number) => {
-        const intent: MoveIntent = { from: move.from, to: move.to, clientMoveID: moveID };
+    
+    const handleMove = (move: Move) => {
+        if (!socket || gameFinished) return;
+
+        const clientMoveID = ++moveIDCounter.current;
+
+        const intent: MoveIntent = { from: move.from, to: move.to, promotion: move.promotion, clientMoveID: clientMoveID };
 
         setMoveHistory(prev => {
             const next = [...prev, move.san];
@@ -45,7 +51,13 @@ export default function Game() {
         });
 
         optimisticMoveRef.current = intent;
-    }
+
+        socket.emit('make-move', {
+            gameID,
+            move: intent,
+        });
+    };
+
 
     // Effect 1 - When either player times out, inform the server
     useEffect(() => {
@@ -101,7 +113,7 @@ export default function Game() {
         const handleGameOver: ServerToClientEvents['game-over'] = ({ winner, reason, }) => {
             stop();
             setGameFinished(true);
-            if(winner === 'draw') {
+            if (winner === 'draw') {
                 toast(`The dust settles and its a DRAW by ${reason}`)
             } else {
                 toast(`${winner} wins by ${reason}`);
@@ -110,7 +122,7 @@ export default function Game() {
 
         const handleJoinError: ServerToClientEvents['join-error'] = ({ message }) => {
             toast.error(message)
-            
+
         };
         const handleMoveError: ServerToClientEvents['move-error'] = ({ message }) => toast.error(message);
 
@@ -148,14 +160,14 @@ export default function Game() {
 
 
     return (
-        
+
         <div className="flex flex-col lg:flex-row items-center justify-around gap-4 p-4 min-h-[80vh]">
 
-            <PlayersInfo myUsername={myUsername ?? ''}  oppUsername={oppUsername ?? ''} whiteTime={whiteTime} blackTime={blackTime} myColor={color ?? 'white'}/>
-        
+            <PlayersInfo myUsername={myUsername ?? ''} oppUsername={oppUsername ?? ''} whiteTime={whiteTime} blackTime={blackTime} myColor={color ?? 'white'} />
+
             {/* Board Section */}
             <div className="w-full max-w-[90vw] lg:max-w-none lg:h-[80vh] flex items-center justify-center">
-                <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} gameID={gameID} addOptimisticMove={addOptimisticMove} />
+                <Board boardState={{ moveHistory, cursor, turn, color, gameFinished }} onMove={handleMove} />
             </div>
 
             {/* History Section */}

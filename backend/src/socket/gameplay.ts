@@ -94,8 +94,8 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
       setTimeoutForCurrentPlayer(io, socket, game, gameID);
       // console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
 
-    } catch {
-      socket.emit("move-error", { message: "Invalid move" });
+    } catch(err) {
+      socket.emit("move-error", { message: `Invalid move from catch ${err}` });
     }
   });
 
