@@ -1,7 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CircleAlert, Loader2 } from "lucide-react";
 
@@ -23,18 +22,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import Particles from "@/components/reactbits/Particles";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const [username, setU] = useState("");
   const [password, setP] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [loginSucceeded, setLoginSucceeded] = useState(false);
 
-
-  const router = useRouter();
-  const { refreshUser, loading, isLoggedIn } = useAuth();
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -57,9 +51,7 @@ export default function LoginPage() {
         setError(data.message ?? "Login failed");
         return;
       }
-      // to make auth context re hit the api/me endpoint to check auth status. 
-      await refreshUser();
-      setLoginSucceeded(true);
+      window.location.href = '/lobby';
     } catch {
       setError("Network error");
     } finally {
@@ -67,17 +59,11 @@ export default function LoginPage() {
     }
   }
 
-  useEffect(() => {
-  if (!loading && isLoggedIn && loginSucceeded) {
-    router.replace("/lobby");
-  }
-}, [loading, isLoggedIn, loginSucceeded, router]);
-
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden bg-black text-white selection:bg-blue-500/30">
 
-      {/* --- 1. Background Layer (Same as Landing) --- */}
+      {/* --- 1. Background Layer --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Particles
           particleColors={['#ffffff', '#ffffff']}

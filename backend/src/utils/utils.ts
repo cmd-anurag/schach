@@ -1,4 +1,6 @@
+import { endGame } from "../game/lifecycle";
 import { Game } from "../types/Game";
+import { AppServer, PlayerSocket } from "../types/socketTypes";
 
 type PlayersInfo = {
   player: {
@@ -64,4 +66,27 @@ export function extractPlayerColor(game: Game, username: string) {
   if (game.white.username === username) return 'white';
   if (game.black.username === username) return 'black';
   return null;
+}
+
+export function setTimeoutForCurrentPlayer(io: AppServer, socket: PlayerSocket, game: Game, gameID: string) {
+  const timeLeft = game.turn === 'white' ? game.time.white : game.time.black;
+  game.time.timeoutHandle = setTimeout(() => {
+
+    if(game.gameFinished) return;
+    updateClock(game);
+
+    if(game.time.white <= 0) {
+      endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed out!'});
+    } else if(game.time.black <= 0) {
+      endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed out!'});
+    }
+
+  }, timeLeft + 100);
+}
+
+export function clearPlayerTimeout(game: Game) {
+  if(game.time.timeoutHandle) {
+    clearTimeout(game.time.timeoutHandle);
+    game.time.timeoutHandle = null;
+  }
 }

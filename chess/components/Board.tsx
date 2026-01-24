@@ -15,7 +15,7 @@ type BoardProps = {  boardState: {
     gameFinished: boolean,
   },
   gameID: string,
-  addOptimisticMove: (move:Move, moveID: number) => void;
+  addOptimisticMove?: (move:Move, moveID: number) => void;
 }
 
 export default function Board({ boardState, gameID, addOptimisticMove } : BoardProps) {
@@ -47,7 +47,7 @@ export default function Board({ boardState, gameID, addOptimisticMove } : BoardP
     const clientMoveID = ++moveIDCounter.current;
     const temp = new Chess(position);
     const tempMove = temp.move({from: pendingPromotion.from, to: pendingPromotion.to, promotion: piece});
-    addOptimisticMove(tempMove, clientMoveID);
+    addOptimisticMove?.(tempMove, clientMoveID);
     socket?.emit('make-move', {gameID, move: {from: pendingPromotion.from, to: pendingPromotion.to, promotion: piece, clientMoveID}});
     setPendingPromotion(null);
   }
@@ -151,7 +151,7 @@ export default function Board({ boardState, gameID, addOptimisticMove } : BoardP
         return;
       }
       const clientMoveID = ++moveIDCounter.current;
-      addOptimisticMove(moveResult.move, clientMoveID);
+      addOptimisticMove?.(moveResult.move, clientMoveID);
       socket?.emit('make-move', { gameID, move: {from: moveFrom, to: square, clientMoveID} });
       // clear moveFrom and optionSquares
       setMoveFrom('');
@@ -186,7 +186,7 @@ export default function Board({ boardState, gameID, addOptimisticMove } : BoardP
 
       // optimism
       const clientMoveID = ++moveIDCounter.current;
-      addOptimisticMove(moveResult.move, clientMoveID);
+      addOptimisticMove?.(moveResult.move, clientMoveID);
       socket?.emit('make-move', { gameID, move: {from: sourceSquare, to: targetSquare, clientMoveID} });
 
       // clear moveFrom and optionSquares

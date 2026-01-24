@@ -22,6 +22,7 @@ export type Game = {
         increment: number,
         turnStartedAt: number | null, // At turnStartedAt, the active player had exactly X ms left.
         running: boolean,
+        timeoutHandle : NodeJS.Timeout | null;
     },
     drawOffer?: 'white' | 'black' | null, // whether a draw offer by this color is currently pending
 }

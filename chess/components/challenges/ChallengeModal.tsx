@@ -51,7 +51,7 @@ export default function ChallengeModal({ toUsername }: { toUsername: string }) {
             The board awaits. Thirty-two pieces. Two minds. One victor. Shall we begin?
           </AlertDialogDescription>
           <div className="flex justify-center">
-            <Tabs onValueChange={(value) => setPrefColor(value as ChallengeColor)} defaultValue="random" className="w-[400px] py-3">
+            <Tabs onValueChange={(value) => setPrefColor(value as ChallengeColor)} defaultValue="random" className="w-full max-w-[400px] py-3">
               <div className="flex justify-center items-center gap-3">
                 <p className="text-sm">Play as?</p>
                 <TabsList>
@@ -62,10 +62,10 @@ export default function ChallengeModal({ toUsername }: { toUsername: string }) {
               </div>
             </Tabs>
           </div>
-          <div className="flex justify-evenly m-3">
+          <div className="flex flex-col sm:flex-row justify-evenly gap-3 m-3">
 
             <Select onValueChange={(val) => setTime(Number(val))}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Time Control" />
               </SelectTrigger>
               <SelectContent>
@@ -82,7 +82,7 @@ export default function ChallengeModal({ toUsername }: { toUsername: string }) {
               </SelectContent>
             </Select>
             <Select onValueChange={(val) => setIncrement(Number(val))} defaultValue="0">
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Increment" />
               </SelectTrigger>
               <SelectContent>
