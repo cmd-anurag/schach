@@ -25,14 +25,12 @@ function getSocketSingleton() {
 }
 
 export function SocketProvider({ children }: { children: ReactNode }) {
-  const { isLoggedIn, loading, wsToken, refreshUser } = useAuth();
+  const { isLoggedIn, loading, wsToken } = useAuth();
 
-  // Socket stored in state (safe to expose)
   const [socket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(
     () => getSocketSingleton()
   );
 
-  // Imperative handle (DO NOT touch during render)
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
   const [isConnected, setIsConnected] = useState(false);
@@ -54,7 +52,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     s.on("disconnect", onDisconnect);
 
     if (isLoggedIn && wsToken) {
-      s.auth = { token: wsToken }; // mutate REF only
+      s.auth = { token: wsToken };
       if (!s.connected) s.connect();
     } else {
       if (s.connected) s.disconnect();
@@ -64,7 +62,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
     };
-  }, [isLoggedIn, wsToken, loading, refreshUser]);
+  }, [isLoggedIn, wsToken, loading]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
