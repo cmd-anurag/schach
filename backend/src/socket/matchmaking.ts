@@ -127,6 +127,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
         increment: increment * 1000, // increment received in seconds from client
         turnStartedAt: null,
         running: false,
+        timeoutHandle: null,
       }
     };
 

@@ -1,7 +1,7 @@
 import { endGame, startGame } from "../game/lifecycle";
 import { getGame } from "../game/store";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
-import { updateClock, identifyEmitter, extractPlayerColor } from "../utils/utils";
+import { updateClock, identifyEmitter, extractPlayerColor, clearPlayerTimeout, setTimeoutForCurrentPlayer } from "../utils/utils";
 
 
 export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
@@ -42,6 +42,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
     }
 
     try {
+      clearPlayerTimeout(game);
       updateClock(game);
 
       if (game.time.white === 0) {
@@ -90,29 +91,30 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
         endGame(io, socket, game, gameID, {winner: 'draw', reason: 'draw',});
         return;
       }
+      setTimeoutForCurrentPlayer(io, socket, game, gameID);
       // console.log(`Move in ${gameID} by ${username} (${playerColor}) — turn -> ${game.turn}`);
 
-    } catch {
-      socket.emit("move-error", { message: "Invalid move" });
+    } catch(err) {
+      socket.emit("move-error", { message: `Invalid move from catch ${err}` });
     }
   });
 
-  socket.on('game-timeout', ({ gameID }) => {
+  // socket.on('game-timeout', ({ gameID }) => {
 
-    const game = getGame(gameID);
-    if (!game || game.gameFinished) return;
+  //   const game = getGame(gameID);
+  //   if (!game || game.gameFinished) return;
 
-    if (!extractPlayerColor(game, username)) return;
+  //   if (!extractPlayerColor(game, username)) return;
 
-    updateClock(game);
+  //   updateClock(game);
 
-    if (game.time.white === 0) {
-      endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
-    } else if (game.time.black === 0) {
-      endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
-    }
+  //   if (game.time.white === 0) {
+  //     endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
+  //   } else if (game.time.black === 0) {
+  //     endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
+  //   }
 
-  });
+  // });
 
   socket.on('resign-game', ({ gameID }) => {
     const game = getGame(gameID);

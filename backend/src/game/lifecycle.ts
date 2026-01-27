@@ -1,6 +1,6 @@
 import { Game } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
-import { updateClock } from "../utils/utils";
+import { clearPlayerTimeout, setTimeoutForCurrentPlayer, updateClock } from "../utils/utils";
 import { deleteGame } from "./store";
 
 type EndGameResult = {
@@ -51,6 +51,7 @@ export function startGame(io: AppServer, socket: PlayerSocket, gameID: string, g
     if (opponentSocketId) {
       game.time.turnStartedAt = Date.now();
       game.time.running = true;
+      setTimeoutForCurrentPlayer(io, socket, game, gameID);
       io.to(opponentSocketId).emit('opponent-connected');
     }
 
@@ -60,7 +61,7 @@ export function startGame(io: AppServer, socket: PlayerSocket, gameID: string, g
 export function endGame(io: AppServer, socket: PlayerSocket, game: Game, gameID: string, result: EndGameResult) {
 
     if (game.gameFinished) return;
-
+    clearPlayerTimeout(game);
     game.gameFinished = true;
     game.time.running = false;
     game.time.turnStartedAt = null,
@@ -104,7 +105,7 @@ type SaveGamePayload = {
     endedAt: number,
 }
 
-async function saveGameToDB(payload : SaveGamePayload) {
+async function saveGameToDB(payload: SaveGamePayload, retries = 3, delay = 1000) {
     const baseURL = process.env.NEXT_BACKEND_URL;
 
     const requestBody = {
@@ -119,19 +120,30 @@ async function saveGameToDB(payload : SaveGamePayload) {
         startedAt: payload.startedAt,
         endedAt: payload.endedAt,
     }
-    try {
-        const res = await fetch(`${baseURL}/api/savegame`, {
-            method: 'POST',
-            body: JSON.stringify(requestBody)
-        });
-        
-        const result: any = await res.json();
-        if(res.ok) {
-            console.log('Saved the game to database');
-        } else {
-            console.log(result.message);
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(`${baseURL}/api/savegame`, {
+                method: 'POST',
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (res.ok) {
+                console.log(`✓ Game ${payload.gameID} saved successfully`);
+                return;
+            } else {
+                const result : unknown = await res.json();
+                const errorMessage = typeof result === 'object' && result !== null && 'message' in result ? result.message : 'Unknown error';
+                throw new Error(`Server error: ${errorMessage}`);
+            }
+        } catch (err) {
+            console.error(`✗ Save attempt ${attempt}/${retries} failed for game ${payload.gameID}:`, err);
+            
+            if (attempt < retries) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                console.error(`✗ Failed to save game ${payload.gameID} after ${retries} attempts`);
+            }
         }
-    } catch(err) {
-        console.log(err);
     }
 }

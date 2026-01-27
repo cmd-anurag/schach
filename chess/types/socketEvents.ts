@@ -1,10 +1,10 @@
-import { Move } from "chess.js"
+import { Move, PieceSymbol } from "chess.js"
 
 export type ChallengeColor = 'white' | 'black' | 'random';
 export type MoveIntent = {
     from: string, 
     to: string,
-    promotion?: 'q' | 'r' | 'b' | 'n',
+    promotion?: PieceSymbol,
     clientMoveID: number,
 }
 
