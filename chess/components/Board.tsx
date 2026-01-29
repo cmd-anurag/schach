@@ -12,14 +12,15 @@ type BoardProps = {
         cursor: number,
         color: 'white' | 'black' | null,
         turn: 'white' | 'black',
-        gameFinished: boolean,
+        isInteractive: boolean,
+        orientation: 'white' | 'black',
     },
     onMove?: (move: Move) => void;
 }
 
 export default function Board({ boardState, onMove }: BoardProps) {
 
-    const { moveHistory, cursor, turn, color, gameFinished } = boardState;
+    const { moveHistory, cursor, turn, color, isInteractive , orientation} = boardState;
 
     // states for click-move logic
     const [moveFrom, setMoveFrom] = useState('');
@@ -92,7 +93,7 @@ export default function Board({ boardState, onMove }: BoardProps) {
         piece
     }: SquareHandlerArgs) {
         // piece clicked to move
-        if (gameFinished) return;
+        if (!isInteractive) return;
         if (pendingPromotion) return;
 
         if (!moveFrom && piece) {
@@ -184,8 +185,6 @@ export default function Board({ boardState, onMove }: BoardProps) {
         setOptionSquares({});
         return true;
     }
-
-    const boardOrientationColor = color ? color : "white";
     const canDragPiece = ({
         piece,
         isSparePiece,
@@ -198,7 +197,7 @@ export default function Board({ boardState, onMove }: BoardProps) {
         // no dragging spare pieces
         if (isSparePiece) return false;
         if (pendingPromotion) return false;
-        if (gameFinished) return false;
+        if (!isInteractive) return false;
 
         // must be live position
         if (cursor !== moveHistory.length) return false;
@@ -213,7 +212,7 @@ export default function Board({ boardState, onMove }: BoardProps) {
         onPieceDrop,
         onSquareClick,
         squareStyles: optionSquares,
-        boardOrientation: boardOrientationColor,
+        boardOrientation: orientation,
         canDragPiece,
         id: 'play-vs-random'
     };

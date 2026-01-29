@@ -30,7 +30,7 @@ export default function RootLayout({
             <main>
               {children}
             </main>
-            <Toaster position="top-center" richColors/>
+            <Toaster position="top-right"/>
           </SocketProvider>
         </AuthProvider>
       </body>

@@ -1,58 +1,64 @@
 "use client";
-import { createContext, ReactNode, useEffect, useState, useCallback } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
+import jwt from 'jsonwebtoken';
 
 type User = {
-  id: string;
+  id: number;
   username: string;
 };
 
 export const AuthContext = createContext<{
   user: User | null;
-  wsToken: string | null,
-  loading: boolean;
+  token: string | null,
   isLoggedIn: boolean;
-  refreshUser: () => Promise<void>;
+  login: (token: string) => void;
+  logout: () => void;
 } | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+
   const [user, setUser] = useState<User | null>(null);
-  const [wsToken, setWsToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
 
-  const refreshUser = useCallback(async () => {
-    try {
-      const res = await fetch("/api/me", { credentials: "include" });
+  useEffect(() => {
+    const tokenFromStorage = localStorage.getItem('session');
+    const userFromStorage = localStorage.getItem('user');
 
-      if (!res.ok) {
-        setUser(null);
-        setWsToken(null);
-        return;
-      }
-
-      const { user, wsToken } = await res.json();
-
-      setUser(user);
-      setWsToken(wsToken);
-    } catch {
-      setUser(null);
-      setWsToken(null);
-    } finally {
-      setLoading(false);
+    if (userFromStorage) {
+      const parsedUser: User = JSON.parse(userFromStorage);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUser(parsedUser);
+      setToken(tokenFromStorage);
     }
   }, []);
 
-  useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
+  const login = (token: string) => {
+    
+    const payload = jwt.decode(
+      token,
+    ) as { id: number; username: string }
+
+    localStorage.setItem('session', token);
+    localStorage.setItem('user', JSON.stringify(payload));
+    setToken(token);
+    setUser(payload);
+  }
+
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('session');
+    localStorage.removeItem('user');
+  }
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        wsToken,
-        loading,
+        token,
         isLoggedIn: !!user,
-        refreshUser,
+        login,
+        logout,
       }}
     >
       {children}

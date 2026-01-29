@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import Particles from "@/components/reactbits/Particles";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setU] = useState("");
@@ -29,6 +31,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  const {login} = useAuth();
+  const router = useRouter();
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -51,7 +55,9 @@ export default function LoginPage() {
         setError(data.message ?? "Login failed");
         return;
       }
-      window.location.href = '/lobby';
+
+      login(data.session);
+      router.replace('/lobby');
     } catch {
       setError("Network error");
     } finally {

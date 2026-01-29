@@ -15,24 +15,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { useSocket } from "@/hooks/useSocket"
 import { Flag } from "lucide-react"
 
-export function ResignButton({gameID} : {gameID : string}) {
+export function ResignButton({onResign, canResign} : {onResign? : () => void, canResign: boolean}) {
 
-    const {socket} = useSocket();
     
-    // Handler for resignation offer
-   const resign = () => {
-        socket?.emit('resign-game', {gameID});
-   }
 
   return (
     <AlertDialog>
       <Tooltip>
           <TooltipTrigger asChild>
             <AlertDialogTrigger asChild>
-              <Button size='lg' className="cursor-pointer border group" variant="ghost"><Flag className="group-hover:text-red-500" /></Button>
+              <Button disabled={!canResign} size='lg' className="cursor-pointer border group" variant="ghost"><Flag className="group-hover:text-red-500" /></Button>
             </AlertDialogTrigger>
           </TooltipTrigger>
           <TooltipContent>
@@ -49,7 +43,7 @@ export function ResignButton({gameID} : {gameID : string}) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Never Mind</AlertDialogCancel>
-          <AlertDialogAction onClick={resign} className="bg-red-700 text-white hover:bg-red-800">Resign</AlertDialogAction>
+          <AlertDialogAction onClick={onResign} className="bg-red-700 text-white hover:bg-red-800">Resign</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -22,7 +22,7 @@ import { Check, Handshake, X } from "lucide-react"
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export function DrawButton({ gameID }: { gameID: string }) {
+export function DrawButton({ gameID, canDraw }: { gameID: string, canDraw: boolean }) {
   const { socket } = useSocket();
 
   const [pendingDraw, setPendingDraw] = useState(false);
@@ -74,7 +74,7 @@ export function DrawButton({ gameID }: { gameID: string }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <AlertDialogTrigger asChild>
-            <Button size='lg' className="cursor-pointer border group" variant="ghost"><Handshake className="group-hover:text-amber-400" /></Button>
+            <Button disabled={!canDraw} size='lg' className="cursor-pointer border group" variant="ghost"><Handshake className="group-hover:text-amber-400" /></Button>
           </AlertDialogTrigger>
         </TooltipTrigger>
         <TooltipContent>

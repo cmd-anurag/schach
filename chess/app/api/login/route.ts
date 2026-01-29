@@ -43,7 +43,7 @@ export async function POST(req: Request){
         );
 
         const res = NextResponse.json(
-            {success: true, message: 'Logged in'},
+            {success: true, message: 'Logged in', session: token},
             {status: 200},
         );
 
