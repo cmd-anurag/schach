@@ -15,11 +15,12 @@ export type ClientToServerEvents = {
     'join-game' : (payload: {gameID: string}) => void,
     'make-move' : (payload: {gameID: string, move: MoveIntent}) => void,
     'get-online-users' : () => void,
-    'game-timeout' : (payload: {gameID: string}) => void,
     'resign-game' : (payload: {gameID: string}) => void,
     'offer-draw' : (payload: {gameID: string}) => void,
     'accept-draw' : (payload: {gameID: string}) => void,
     'reject-draw' : (payload: {gameID: string}) => void,
+    'spectate-game' : (payload: {gameID: string}) => void,
+    'spectate-player' : (payload: {username: string}) => void;
 }
 
 export type ServerToClientEvents = {
@@ -27,6 +28,19 @@ export type ServerToClientEvents = {
     'incoming-challenge': (payload : {fromUsername: string, color: ChallengeColor, time: number, increment: number}) => void,
     'challenge-accepted': (payload: {gameID: string, color: 'white' | 'black', opponent: string}) => void,
     'challenge-rejected': (payload: {by: string}) => void,
+
+    'spectate-start': (payload: {
+        gameID: string,
+        whiteUsername: string,
+        blackUsername: string,
+        turn: 'white' | 'black',
+        moveHistory: string[],
+        timeLeft:  {
+            white: number,
+            black: number,
+            turnStartedAt: number,
+        }
+    }) => void,
 
     'game-start' : (payload: {
         gameID: string,
@@ -68,4 +82,5 @@ export type ServerToClientEvents = {
     'join-error' : (payload: {message: string}) => void,
     'move-error' : (payload: {message: string}) => void,
     'challenge-error' : (payload: {message: string}) => void,
+    'spectate-error' : (payload: {message: string}) => void,
 }

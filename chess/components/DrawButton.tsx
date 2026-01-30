@@ -22,24 +22,30 @@ import { Check, Handshake, X } from "lucide-react"
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export function DrawButton({ gameID }: { gameID: string }) {
+export function DrawButton({ gameID, canDraw }: { gameID?: string, canDraw: boolean }) {
   const { socket } = useSocket();
 
   const [pendingDraw, setPendingDraw] = useState(false);
 
   const offerDraw = () => {
-    socket?.emit('offer-draw', { gameID });
-    toast(`Sent a Draw Offer to opponent`);
+    if(gameID) {
+      socket?.emit('offer-draw', { gameID });
+      toast(`Sent a Draw Offer to opponent`);
+    }
   }
 
   const acceptDraw = () => {
-    socket?.emit('accept-draw', { gameID });
-    setPendingDraw(false);
+    if(gameID) {
+      socket?.emit('accept-draw', { gameID });
+      setPendingDraw(false);
+    }
   }
 
   const rejectDraw = () => {
-    socket?.emit('reject-draw', { gameID });
-    setPendingDraw(false);
+    if(gameID) {
+      socket?.emit('reject-draw', { gameID });
+      setPendingDraw(false);
+    }
   }
 
   const handleIncomingDraw = () => {
@@ -74,7 +80,7 @@ export function DrawButton({ gameID }: { gameID: string }) {
       <Tooltip>
         <TooltipTrigger asChild>
           <AlertDialogTrigger asChild>
-            <Button size='lg' className="cursor-pointer border group" variant="ghost"><Handshake className="group-hover:text-amber-400" /></Button>
+            <Button disabled={!canDraw} size='lg' className="cursor-pointer border group" variant="ghost"><Handshake className="group-hover:text-amber-400" /></Button>
           </AlertDialogTrigger>
         </TooltipTrigger>
         <TooltipContent>

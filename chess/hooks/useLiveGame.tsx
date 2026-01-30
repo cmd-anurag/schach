@@ -4,13 +4,19 @@ import { useSocket } from "./useSocket";
 import { Move } from "chess.js";
 import { toast } from "sonner";
 import { useChessClock } from "./useChessClock";
+import { useAuth } from "./useAuth";
 
 export function useLiveGame({ gameID }: { gameID: string }) {
 
     const { socket } = useSocket();
-    const { whiteTime, blackTime, sync, stop, timedOut } = useChessClock();
+    const { whiteTime, blackTime, sync, stop } = useChessClock();
 
-    const [oppUsername, setOppUsername] = useState<string | null>(null);
+
+    const [whiteUsername, setWhiteUsername] = useState<string | null>(null);
+    const [blackUsername, setBlackUsername] = useState<string | null>(null);
+
+    const { user } = useAuth();
+    const myUsername = user?.username ?? null;
 
     // GAME STATES
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
@@ -44,22 +50,20 @@ export function useLiveGame({ gameID }: { gameID: string }) {
         });
     }, [socket, gameFinished, gameID]);
 
-    // Effect 1 - When either player times out, inform the server
-    useEffect(() => {
-        if (!timedOut) return;
+    const handleResign = useCallback(() => {
+        socket?.emit('resign-game', { gameID });
+    }, [socket, gameID]);
 
-        socket?.emit('game-timeout', { gameID });
-        console.log(timedOut);
-    }, [timedOut, socket, gameID]);
 
-    // Effect 2: Join game only (runs once per socket/game)
+
+    // Effect 1: Join game only (runs once per socket/game)
     useEffect(() => {
         if (!socket || !gameID) return;
 
         socket.emit('join-game', { gameID });
     }, [socket, gameID]);
 
-    // Effect 3: Socket Event handlers
+    // Effect 2: Socket Event handlers
     useEffect(() => {
         if (!socket) return;
 
@@ -68,7 +72,15 @@ export function useLiveGame({ gameID }: { gameID: string }) {
             setMoveHistory(moveHistory);
             setCursor(moveHistory.length);
             setTurn(turn);
-            setOppUsername(opponent);
+
+            if (myColor === 'white') {
+                setWhiteUsername(myUsername)
+                setBlackUsername(opponent);
+            } else {
+                setWhiteUsername(opponent);
+                setBlackUsername(myUsername);
+            }
+
             sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
             if (!opponentConnected) {
                 toast.info("Waiting for opponent to connect...");
@@ -124,7 +136,7 @@ export function useLiveGame({ gameID }: { gameID: string }) {
             socket.off('join-error', handleJoinError);
             socket.off('move-error', handleMoveError);
         };
-    }, [socket, color, sync, stop]);
+    }, [socket, color, sync, stop, myUsername]);
 
     // Effect 4. Keyboard Event handlers
     useEffect(() => {
@@ -144,34 +156,24 @@ export function useLiveGame({ gameID }: { gameID: string }) {
     }, [moveHistory.length]);
 
     return {
-        boardProps: {
-            boardState: {
-                moveHistory,
-                cursor,
-                turn,
-                color,
-                gameFinished,
-            },
-            onMove: handleMove,
-            interactionEnabled: !gameFinished,
+        boardState: {
+            moveHistory,
+            cursor,
+            turn,
+            color,
         },
-
-        historyProps: {
-            moves: moveHistory,
-            currentIndex: cursor,
-            onJump: setCursor,
-        },
-
         playersInfo: {
-            oppUsername,
+            whiteUsername,
+            blackUsername,
             whiteTime,
             blackTime,
-            myColor: color ?? 'white',
         },
-
         controls: {
             canResign: !gameFinished,
             canDraw: !gameFinished,
+            onMove: handleMove,
+            onResign: handleResign,
+            onCursorJump: setCursor,
         },
     };
 }

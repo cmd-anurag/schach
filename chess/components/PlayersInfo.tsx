@@ -2,14 +2,14 @@ import { Clock10, User } from "lucide-react";
 import Clock from "@/components/Clock";
 
 type Props = {
-    myUsername: string,
-    oppUsername: string,
+    whiteUsername: string,
+    blackUsername: string,
     whiteTime: number,
     blackTime: number,
-    myColor: 'white' | 'black'
+    orientation: 'white' | 'black'
 }
 
-export default function PlayersInfo({ myUsername, oppUsername, whiteTime, blackTime, myColor }: Props) {
+export default function PlayersInfo({ whiteUsername, blackUsername, whiteTime, blackTime, orientation }: Props) {
     return (
         <>
             {/* Player Info Section */}
@@ -18,12 +18,12 @@ export default function PlayersInfo({ myUsername, oppUsername, whiteTime, blackT
                 {/* Opponent */}
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 lg:gap-4">
-                        <User fill={myColor === "white" ? "black" : "white"} />
-                        <span className="text-lg lg:text-xl font-bold">{oppUsername}</span>
+                        <User fill={orientation === "white" ? "black" : "white"} />
+                        <span className="text-lg lg:text-xl font-bold">{orientation === 'white'? blackUsername : whiteUsername}</span>
                     </div>
                     <div className="flex items-center gap-2 lg:gap-4">
                         <Clock10 size={20} />
-                        <Clock timeMs={myColor === "white" ? blackTime : whiteTime} />
+                        <Clock timeMs={orientation === "white" ? blackTime : whiteTime} />
                     </div>
                 </div>
 
@@ -34,12 +34,12 @@ export default function PlayersInfo({ myUsername, oppUsername, whiteTime, blackT
                 {/* Me */}
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 lg:gap-4">
-                        <User size={25} fill={myColor === "white" ? "white" : "black"} />
-                        <span className="text-lg lg:text-xl font-bold">{myUsername}</span>
+                        <User size={25} fill={orientation === "white" ? "white" : "black"} />
+                        <span className="text-lg lg:text-xl font-bold">{orientation === 'white'? whiteUsername : blackUsername}</span>
                     </div>
                     <div className="flex items-center gap-2 lg:gap-4">
                         <Clock10 size={25} />
-                        <Clock timeMs={myColor === "white" ? whiteTime : blackTime} />
+                        <Clock timeMs={orientation === "white" ? whiteTime : blackTime} />
                     </div>
                 </div>
             </div>

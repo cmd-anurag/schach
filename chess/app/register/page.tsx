@@ -32,7 +32,7 @@ export default function RegisterPage() {
   const [processing, setProcessing] = useState(false);
 
   const router = useRouter();
-  const {refreshUser} = useAuth();
+  const {login} = useAuth();
 
   async function handleRegister(e: FormEvent) {
     e.preventDefault();
@@ -54,7 +54,7 @@ export default function RegisterPage() {
         return;
       }
       
-      await refreshUser();
+      login(data.session);
       router.replace("/lobby");
     } catch {
       setError("Network error");

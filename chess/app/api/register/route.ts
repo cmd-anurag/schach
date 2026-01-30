@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         );
 
         const res = NextResponse.json(
-            { success: true, message: "Registered successfully" },
+            { success: true, message: "Registered successfully", session: token },
             { status: 201 }
         );
 

@@ -25,4 +25,5 @@ export type Game = {
         timeoutHandle : NodeJS.Timeout | null;
     },
     drawOffer?: 'white' | 'black' | null, // whether a draw offer by this color is currently pending
+    spectators: Set<string>
 }
