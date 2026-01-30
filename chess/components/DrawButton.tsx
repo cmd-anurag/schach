@@ -22,24 +22,30 @@ import { Check, Handshake, X } from "lucide-react"
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export function DrawButton({ gameID, canDraw }: { gameID: string, canDraw: boolean }) {
+export function DrawButton({ gameID, canDraw }: { gameID?: string, canDraw: boolean }) {
   const { socket } = useSocket();
 
   const [pendingDraw, setPendingDraw] = useState(false);
 
   const offerDraw = () => {
-    socket?.emit('offer-draw', { gameID });
-    toast(`Sent a Draw Offer to opponent`);
+    if(gameID) {
+      socket?.emit('offer-draw', { gameID });
+      toast(`Sent a Draw Offer to opponent`);
+    }
   }
 
   const acceptDraw = () => {
-    socket?.emit('accept-draw', { gameID });
-    setPendingDraw(false);
+    if(gameID) {
+      socket?.emit('accept-draw', { gameID });
+      setPendingDraw(false);
+    }
   }
 
   const rejectDraw = () => {
-    socket?.emit('reject-draw', { gameID });
-    setPendingDraw(false);
+    if(gameID) {
+      socket?.emit('reject-draw', { gameID });
+      setPendingDraw(false);
+    }
   }
 
   const handleIncomingDraw = () => {

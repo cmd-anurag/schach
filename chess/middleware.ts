@@ -11,5 +11,6 @@ export const config = {
     matcher: [
         "/lobby/:path*",
         "/play/:path*",
+        "/spectate/:path*"
     ]
 };

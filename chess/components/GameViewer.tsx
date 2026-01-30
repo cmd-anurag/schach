@@ -31,7 +31,7 @@ type Props = {
         canDraw: boolean,
     }
 
-    gameID: string, // a temp prop for draw button, havent thought of a way to refactor draw yet
+    gameID?: string, // a temp prop for draw button, havent thought of a way to refactor draw yet
 }
 
 export default function GameViewer({ playersInfo, boardState, controls, gameID }: Props) {
