@@ -6,6 +6,7 @@ import {registerGameplayHandlers} from "./socket/gameplay";
 import {registerDisconnectHandlers} from "./socket/disconnect";
 
 import {AppServer, PlayerSocket} from "./types/socketTypes";
+import { registerSpectatingHandlers } from "./socket/spectators";
 
 const httpserver = createServer();
 const PORT = Number(process.env.PORT) || 3010;
@@ -32,6 +33,7 @@ io.on("connection", (socket: PlayerSocket) => {
 
   registerMatchmakingHandlers(io, socket, onlineUsers);
   registerGameplayHandlers(io, socket);
+  registerSpectatingHandlers(io, socket);
   registerDisconnectHandlers(io, socket,onlineUsers);
 });
 

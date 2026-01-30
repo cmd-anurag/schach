@@ -2,7 +2,7 @@ import { AppServer, PlayerSocket } from "../types/socketTypes";
 import { Game } from "../types/Game";
 import { Chess } from "chess.js";
 import { randomBytes } from "crypto";
-import { addGame } from "../game/store";
+import { addGame, addToPlaying, getPlayingIn } from "../game/store";
 
 
 function generateGameID() {
@@ -42,6 +42,11 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       return;
     }
 
+    if(getPlayingIn(toUsername) || getPlayingIn(username)) {
+      socket.emit('challenge-error', {message: 'One of the players is already in a game'});
+      return;
+    }
+
     // ---- forward challenge ----
     io.to(targetSocketId).emit("incoming-challenge", {
       fromUsername: username,
@@ -67,6 +72,10 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
 
     if (!challengerSocketId) {
       socket.emit("challenge-error", { message: "Challenger went offline" });
+      return;
+    }
+    if(getPlayingIn(fromUsername) || getPlayingIn(username)) {
+      socket.emit('challenge-error', {message: 'One of the players is already in a game'});
       return;
     }
 
@@ -122,17 +131,20 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       gameFinished: false,
       gameStartedAt: Date.now(),
       time: {
-        white: time * 1000 * 60, // storeing time in ms instead of minutes received from client
+        white: time * 1000 * 60, // storing time in ms instead of minutes received from client
         black: time * 1000 * 60,
         increment: increment * 1000, // increment received in seconds from client
         turnStartedAt: null,
         running: false,
         timeoutHandle: null,
-      }
+      },
+      spectators: new Set(),
     };
 
     // store
     addGame(gameID, game);
+    addToPlaying(whiteUsername, gameID);
+    addToPlaying(blackUsername, gameID);
 
     // notify challenger
     io.to(challengerSocketId).emit("challenge-accepted", {

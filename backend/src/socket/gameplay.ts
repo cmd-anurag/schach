@@ -99,23 +99,6 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
     }
   });
 
-  // socket.on('game-timeout', ({ gameID }) => {
-
-  //   const game = getGame(gameID);
-  //   if (!game || game.gameFinished) return;
-
-  //   if (!extractPlayerColor(game, username)) return;
-
-  //   updateClock(game);
-
-  //   if (game.time.white === 0) {
-  //     endGame(io, socket, game, gameID, {winner: 'black', reason: 'White Timed Out!',});
-  //   } else if (game.time.black === 0) {
-  //     endGame(io, socket, game, gameID, {winner: 'white', reason: 'Black Timed Out',});
-  //   }
-
-  // });
-
   socket.on('resign-game', ({ gameID }) => {
     const game = getGame(gameID);
     if (!game) return;

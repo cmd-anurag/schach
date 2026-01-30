@@ -1,7 +1,7 @@
 import { Game } from "../types/Game";
 import { AppServer, PlayerSocket } from "../types/socketTypes";
 import { clearPlayerTimeout, setTimeoutForCurrentPlayer, updateClock } from "../utils/utils";
-import { deleteGame } from "./store";
+import { deleteGame, removeFromPlaying } from "./store";
 
 type EndGameResult = {
     winner: 'white' | 'black' | 'draw',
@@ -86,6 +86,8 @@ export function endGame(io: AppServer, socket: PlayerSocket, game: Game, gameID:
     });
 
     deleteGame(gameID);
+    removeFromPlaying(game.white.username);
+    removeFromPlaying(game.black.username);
 }
 
 type SaveGamePayload = {
