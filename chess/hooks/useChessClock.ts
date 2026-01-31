@@ -6,7 +6,8 @@ type SyncPayload = {
   whiteMs: number;
   blackMs: number;
   turnStartedAt: number;
-  turn?: Color;
+  serverNow: number,
+  turn: Color;
 };
 
 export function useChessClock() {
@@ -15,6 +16,7 @@ export function useChessClock() {
   const baseBlack = useRef(0);
   const turnStartedAt = useRef(0);
   const turnRef = useRef<Color>("white");
+  const serverOffset = useRef(0);
 
   // runtime flags
   const running = useRef(false);
@@ -29,7 +31,8 @@ export function useChessClock() {
   const tick = useCallback(() => {
     if (!running.current) return;
 
-    const elapsed = Date.now() - turnStartedAt.current;
+    const adjustedNow = Date.now() + serverOffset.current;
+    const elapsed = adjustedNow - turnStartedAt.current;
 
     let nextWhite = baseWhite.current;
     let nextBlack = baseBlack.current;
@@ -67,7 +70,8 @@ export function useChessClock() {
   const stop = useCallback(() => {
     if (!running.current) return;
 
-    const elapsed = Date.now() - turnStartedAt.current;
+    const adjustedNow = Date.now() + serverOffset.current;
+    const elapsed = adjustedNow - turnStartedAt.current;
 
     if (turnRef.current === "white") {
       baseWhite.current = Math.max(0, baseWhite.current - elapsed);
@@ -98,12 +102,13 @@ export function useChessClock() {
 
   const sync = useCallback(
     (payload: SyncPayload) => {
+
+      serverOffset.current = payload.serverNow - Date.now();
+
       baseWhite.current = payload.whiteMs;
       baseBlack.current = payload.blackMs;
       turnStartedAt.current = payload.turnStartedAt;
-      if (payload.turn) {
-        turnRef.current = payload.turn;
-      }
+      turnRef.current = payload.turn;
 
       timedOutRef.current = false;
       setTimedOut(null);

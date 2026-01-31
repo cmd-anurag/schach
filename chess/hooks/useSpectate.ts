@@ -35,11 +35,11 @@ export function useSpectate({username, gameID} : {username?: string, gameID?: st
                 setCursor(payload.moveHistory.length);
                 return payload.moveHistory;
             });
-            sync({ whiteMs: payload.timeLeft.white, blackMs: payload.timeLeft.black, turn: payload.turn, turnStartedAt: payload.timeLeft.turnStartedAt });
+            sync({ whiteMs: payload.timeLeft.white, blackMs: payload.timeLeft.black, turn: payload.turn, turnStartedAt: payload.timeLeft.turnStartedAt, serverNow: payload.timeLeft.serverNow });
         };
 
         const handleMoveMade: ServerToClientEvents['move-made'] = (payload) => {
-            sync({ whiteMs: payload.timeLeft.white, blackMs: payload.timeLeft.black, turn: payload.turn, turnStartedAt: payload.timeLeft.turnStartedAt });
+            sync({ whiteMs: payload.timeLeft.white, blackMs: payload.timeLeft.black, turn: payload.turn, turnStartedAt: payload.timeLeft.turnStartedAt, serverNow: payload.timeLeft.serverNow });
             setMoveHistory(prev => {
                 const next = [...prev, payload.move.san];
                 setCursor(next.length);

@@ -81,14 +81,14 @@ export function useLiveGame({ gameID }: { gameID: string }) {
                 setBlackUsername(myUsername);
             }
 
-            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
+            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt, serverNow: timeLeft.serverNow });
             if (!opponentConnected) {
                 toast.info("Waiting for opponent to connect...");
             }
         };
 
         const handleMoveMade: ServerToClientEvents['move-made'] = ({ move, moveID, turn, timeLeft }) => {
-            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt });
+            sync({ whiteMs: timeLeft.white, blackMs: timeLeft.black, turn, turnStartedAt: timeLeft.turnStartedAt, serverNow: timeLeft.serverNow });
 
             // optimistic move
             setMoveHistory(prev => {

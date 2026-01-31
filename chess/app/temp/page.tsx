@@ -1,3 +1,5 @@
+// TODO - Investigate the time lag in production
+
 import FinishedGame from "@/components/FinishedGame";
 
 export default function Test() {

@@ -74,6 +74,7 @@ export function registerGameplayHandlers(io: AppServer, socket: PlayerSocket) {
           white: game.time.white,
           black: game.time.black,
           turnStartedAt: game.time.turnStartedAt ?? Date.now(),
+          serverNow: Date.now(),
         }
       })
 

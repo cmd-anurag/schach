@@ -44,6 +44,7 @@ export function startGame(io: AppServer, socket: PlayerSocket, gameID: string, g
             white: game.time.white,
             black: game.time.black,
             turnStartedAt: game.time.turnStartedAt,
+            serverNow: Date.now(),
         }
     });
 
