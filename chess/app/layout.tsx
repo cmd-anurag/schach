@@ -4,11 +4,12 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Preahvihear } from "next/font/google";
+import ChallangeContextProvider from "@/context/ChallengeContext";
 
 const preahvihear = Preahvihear({
   weight: "400",
-  subsets: ['latin']
-})
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Schach - Online Chess Multiplayer",
@@ -22,17 +23,15 @@ export default function RootLayout({
 }>) {
   return (
     <html className="dark" lang="en">
-      <body
-        className={` ${preahvihear.className} antialiased`}
-      >
-        <AuthProvider>
-          <SocketProvider>
-            <main>
-              {children}
-            </main>
-            <Toaster position="top-right"/>
-          </SocketProvider>
-        </AuthProvider>
+      <body className={` ${preahvihear.className} antialiased`}>
+        <ChallangeContextProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <main>{children}</main>
+              <Toaster position="top-right" />
+            </SocketProvider>
+          </AuthProvider>
+        </ChallangeContextProvider>
       </body>
     </html>
   );
