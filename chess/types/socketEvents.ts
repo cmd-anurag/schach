@@ -39,6 +39,7 @@ export type ServerToClientEvents = {
             white: number,
             black: number,
             turnStartedAt: number,
+            serverNow: number,
         }
     }) => void,
 
@@ -53,6 +54,7 @@ export type ServerToClientEvents = {
             white: number,
             black: number,
             turnStartedAt: number,
+            serverNow: number,
         },
     }) => void,
 
@@ -65,6 +67,7 @@ export type ServerToClientEvents = {
             white: number,
             black: number,
             turnStartedAt: number,
+            serverNow: number,
         },
     }) => void,
 

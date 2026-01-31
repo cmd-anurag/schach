@@ -21,7 +21,8 @@ export function registerSpectatingHandlers(io: AppServer, socket: PlayerSocket) 
             timeLeft: {
                 white: game.time.white,
                 black: game.time.black,
-                turnStartedAt: game.time.turnStartedAt ?? Date.now()
+                turnStartedAt: game.time.turnStartedAt ?? Date.now(),
+                serverNow: Date.now()
             }
         }
         socket.join(gameID);
@@ -52,7 +53,8 @@ export function registerSpectatingHandlers(io: AppServer, socket: PlayerSocket) 
             timeLeft: {
                 white: game.time.white,
                 black: game.time.black,
-                turnStartedAt: game.time.turnStartedAt ?? Date.now()
+                turnStartedAt: game.time.turnStartedAt ?? Date.now(),
+                serverNow: Date.now(),
             }
         }
         socket.join(gameID);
