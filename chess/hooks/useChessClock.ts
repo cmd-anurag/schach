@@ -70,7 +70,8 @@ export function useChessClock() {
   const stop = useCallback(() => {
     if (!running.current) return;
 
-    const elapsed = Date.now() - turnStartedAt.current;
+    const adjustedNow = Date.now() + serverOffset.current;
+    const elapsed = adjustedNow - turnStartedAt.current;
 
     if (turnRef.current === "white") {
       baseWhite.current = Math.max(0, baseWhite.current - elapsed);
