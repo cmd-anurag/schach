@@ -3,6 +3,7 @@ import IncomingChallenges from "@/components/challenges/IncomingChallenges";
 import IsOnline from "@/components/IsOnline";
 import { useAuth } from "@/hooks/useAuth";
 import { User } from "lucide-react";
+import Link from "next/link";
 
 export default function Toolbar() {
     const { user } = useAuth();
@@ -11,7 +12,9 @@ export default function Toolbar() {
             <IncomingChallenges />
             <IsOnline />
             <User className="w-4 h-4 md:w-6 md:h-6" />
-            <p className="font-bold text-sm md:text-base">{user?.username}</p>
+            <Link href={`/user/${user?.username}`}>
+                <p className="font-bold text-sm md:text-base">{user?.username}</p>
+            </Link>
         </div>
     )
 }

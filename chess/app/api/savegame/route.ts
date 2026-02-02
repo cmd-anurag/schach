@@ -1,4 +1,4 @@
-// TODO - VIEW ROUTE FOR FINISHED GAMES
+
 // Future Todo - challenge context 
 
 import {prisma} from "@/lib/prisma";
@@ -18,12 +18,27 @@ const SaveGameSchema = z.object({
   time: z.object({
     white: z.number().int(),
     black: z.number().int(),
+    baseTime: z.number().int(),
     increment: z.number().int(),
   }),
   
   startedAt: z.number(),
   endedAt: z.number(),
 });
+
+const getGameType = (baseTime: number) => {
+    const minutes = baseTime / 1000 / 60;
+    if(minutes > 20)
+        return 'CLASSICAL';
+    if(minutes > 5)
+        return 'RAPID';
+    if(minutes > 2)
+        return 'BLITZ';
+    if(minutes > 0 && minutes <= 2)
+        return 'BULLET';
+
+    return 'CLASSICAL';
+}
 export async function POST(req: Request){
     
     try {
@@ -38,6 +53,7 @@ export async function POST(req: Request){
         await prisma.finishedGames.create({
             data: {
                 gameID: body.gameID,
+                gameType: getGameType(body.time.baseTime),
                 whiteID: body.whiteID,
                 blackID: body.blackID,
                 result: body.result,
@@ -47,6 +63,7 @@ export async function POST(req: Request){
                 timeWhite: body.time.white,
                 timeBlack: body.time.black,
                 increment: body.time.increment,
+                baseTime: body.time.baseTime,
                 startedAt: new Date(body.startedAt),
                 endedAt: new Date(body.endedAt),
             }

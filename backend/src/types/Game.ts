@@ -19,6 +19,7 @@ export type Game = {
     time: {
         white: number,
         black: number,
+        baseTime: number,
         increment: number,
         turnStartedAt: number | null, // At turnStartedAt, the active player had exactly X ms left.
         running: boolean,
