@@ -15,6 +15,27 @@ model User {
 
   gamesAsWhite  FinishedGames[] @relation("WhiteGames")
   gamesAsBlack  FinishedGames[] @relation("BlackGames")
+
+  stats         UserStats?
+}
+
+model UserStats {
+  userID      Int       @id
+  user        User      @relation(fields: [userID], references: [id], onDelete: Cascade)
+
+  totalGames  Int       @default(0)
+  gamesWhite  Int       @default(0)
+  gamesBlack  Int       @default(0)
+  wins        Int       @default(0)
+  losses      Int       @default(0)
+  draws       Int       @default(0)
+
+  bullet      Int       @default(0)
+  blitz       Int       @default(0)
+  rapid       Int       @default(0)
+  classical   Int       @default(0)
+
+  updatedAt   DateTime  @updatedAt
 }
 
 model FinishedGames {
@@ -39,6 +60,13 @@ model FinishedGames {
 
   startedAt   DateTime
   endedAt     DateTime      @default(now())
+
+  @@index([whiteID])
+  @@index([blackID])
+  @@index([endedAt])
+
+  @@index([whiteID, endedAt])
+  @@index([blackID, endedAt])
 }
 
 enum GameResult {
