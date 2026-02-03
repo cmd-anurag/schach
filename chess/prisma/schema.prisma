@@ -8,39 +8,48 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  username      String   @unique
+  id            Int             @id @default(autoincrement())
+  username      String          @unique
   passwordHash  String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime        @default(now())
 
-  gamesAsWhite FinishedGames[] @relation("WhiteGames")
-  gamesAsBlack FinishedGames[] @relation("BlackGames")
+  gamesAsWhite  FinishedGames[] @relation("WhiteGames")
+  gamesAsBlack  FinishedGames[] @relation("BlackGames")
 }
 
 model FinishedGames {
-  gameID          String @id
+  gameID      String        @id
+  gameType    GameType
   
-  whiteID Int
-  blackID Int
+  whiteID     Int
+  blackID     Int
 
-  white User @relation("WhiteGames", fields: [whiteID], references: [id])
-  black User @relation("BlackGames", fields: [blackID], references: [id])
+  white       User          @relation("WhiteGames", fields: [whiteID], references: [id])
+  black       User          @relation("BlackGames", fields: [blackID], references: [id])
 
-  timeWhite Int @default(0)
-  timeBlack Int @default(0)
-  increment Int @default(0)
+  timeWhite   Int           @default(0)
+  timeBlack   Int           @default(0)
+  baseTime    Int           @default(0)
+  increment   Int           @default(0)
 
-  result GameResult
-  reason String
-  moves String[]
-  finalFEN String
+  result      GameResult
+  reason      String
+  moves       String[]
+  finalFEN    String
 
-  startedAt DateTime
-  endedAt DateTime @default(now())
+  startedAt   DateTime
+  endedAt     DateTime      @default(now())
 }
 
 enum GameResult {
   WHITE
   BLACK
   DRAW
+}
+
+enum GameType {
+  BULLET
+  BLITZ
+  RAPID
+  CLASSICAL
 }

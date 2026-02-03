@@ -80,6 +80,7 @@ export function endGame(io: AppServer, socket: PlayerSocket, game: Game, gameID:
         time: {
             white: game.time.white,
             black: game.time.black,
+            baseTime: game.time.baseTime,
             increment: game.time.increment,
         },
         startedAt: game.gameStartedAt,
@@ -102,6 +103,7 @@ type SaveGamePayload = {
     time: {
         white: number,
         black: number,
+        baseTime: number,
         increment: number,
     }
     startedAt: number,

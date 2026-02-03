@@ -133,6 +133,7 @@ export function registerMatchmakingHandlers(io: AppServer, socket: PlayerSocket,
       time: {
         white: time * 1000 * 60, // storing time in ms instead of minutes received from client
         black: time * 1000 * 60,
+        baseTime: time * 1000 * 60,
         increment: increment * 1000, // increment received in seconds from client
         turnStartedAt: null,
         running: false,

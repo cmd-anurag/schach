@@ -1,8 +1,9 @@
 import ViewGameClient from "@/components/ViewGameClient";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 
-const fetchGameByID = async (gameID: string) => {
+const fetchGameByID = unstable_cache(async (gameID: string) => {
   const game = await prisma.finishedGames.findUnique({
     where: { gameID },
     include: {
@@ -21,7 +22,7 @@ const fetchGameByID = async (gameID: string) => {
     }
   });
   return game;
-}
+}, ['fetch-game-by-id']);
 
 export default async function ViewGame({ params }: {
   params: Promise<{ gameID: string }>

@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import Particles from "@/components/reactbits/Particles";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [username, setU] = useState("");
@@ -32,7 +32,6 @@ export default function LoginPage() {
   const [processing, setProcessing] = useState(false);
 
   const {login} = useAuth();
-  const router = useRouter();
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -57,7 +56,10 @@ export default function LoginPage() {
       }
 
       login(data.session);
-      router.replace('/lobby');
+      toast.success('Login Successful! Please wait...');
+      setTimeout(() => {
+        window.location.href = '/lobby';
+      }, 1000);
     } catch {
       setError("Network error");
     } finally {
