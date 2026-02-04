@@ -23,6 +23,7 @@ import { ChallengeColor } from "@/types/socketEvents";
 import { Flame, Rabbit, Turtle, Zap } from "lucide-react";
 import { useState } from "react"
 import { toast } from "sonner"
+import { Button } from "../ui/button";
 
 export default function ChallengeModal({ toUsername }: { toUsername: string }) {
   const [prefColor, setPrefColor] = useState<ChallengeColor>('random');
@@ -46,7 +47,7 @@ export default function ChallengeModal({ toUsername }: { toUsername: string }) {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger className="text-sm px-2 py-2 bg-indigo-600 rounded-lg cursor-pointer">Challenge</AlertDialogTrigger>
+      <AlertDialogTrigger asChild className="text-sm px-2 py-2 cursor-pointer"><Button>Challenge</Button></AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Challenge {toUsername}...</AlertDialogTitle>
