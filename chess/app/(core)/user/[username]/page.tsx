@@ -1,7 +1,7 @@
 import ChessStats from "@/components/ChessStats";
-import { ChessStatsSkeleton } from "@/components/ChessStatsSkeleton";
+import ChessStatsSkeleton from "@/components/loaders/ChessStatsSkeleton";
 import FinishedGameList from "@/components/FinishedGameList";
-import { Skeleton } from "@/components/ui/skeleton";
+import FinishedGameListSkeleton from "@/components/loaders/FinishedGameListSkeleton";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -46,7 +46,7 @@ export default async function User({params} : {params: Promise<{username: string
         </Suspense>
 
         {/* GAMES LIST */}
-        <Suspense fallback={<Skeleton className="w-full h-32 bg-zinc-700" />}>
+        <Suspense fallback={<FinishedGameListSkeleton />}>
           <FinishedGameList userID={userID} />
         </Suspense>
         
