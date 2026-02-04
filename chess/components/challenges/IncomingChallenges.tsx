@@ -8,77 +8,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import NoChallenges from "./NoChallenges"
-import { useEffect, useState } from "react"
-import { useSocket } from "@/hooks/useSocket";
-import { ChallengeColor, ServerToClientEvents } from "@/types/socketEvents";
-import { toast } from "sonner";
 import { Swords } from "lucide-react";
 import Challenge from "./Challenge";
-import { useRouter } from "next/navigation";
-
-type IncomingChallenge = {
-  fromUsername: string,
-  color: ChallengeColor,
-  time: number,
-  increment: number,
-}
+import { useState } from "react";
+import { useChallenges } from "@/hooks/useChallenges";
 
 export default function IncomingChallenges() {
 
-  const [challenges, setChallenges] = useState<IncomingChallenge[]>([]);
   const [open, setOpen] = useState(false);
-  const { socket } = useSocket();
-  const router = useRouter();
-
-  const removeChallenge = (username: string) => {
-    setChallenges(prev => prev.filter(challenge => username !== challenge.fromUsername));
-  }
-
-  useEffect(() => {
-
-    const incomingChallengeHandler: ServerToClientEvents['incoming-challenge'] = ({ fromUsername, color, time, increment }) => {
-
-      setChallenges(prev => {
-        if (prev.some(c => c.fromUsername === fromUsername)) {
-          return prev;
-        }
-        return [...prev, { fromUsername, color, time, increment }]
-      });
-
-      toast(`${fromUsername} challenged you for a battle of wits! Hope you stretched your brain.`, {
-        action: {
-          label: 'View All',
-          onClick: () => setOpen(true),
-        },
-      });
-      console.log(`challenge received from ${fromUsername} pref color = ${color}`);
-    };
-
-    const challengeRejectedHandler: ServerToClientEvents['challenge-rejected'] = ({ by }) => {
-      console.log(`${by} rejected your challenge.`);
-      toast.info(`${by} rejected your challenge.`);
-    }
-
-    const challengeAcceptedHandler: ServerToClientEvents['challenge-accepted'] = ({ gameID }) => {
-      // toast.success(`Starting your game with ${opponent}...`);
-      // setTimeout(() => {
-      //   console.log("redirect to playing area");
-      //   router.push(`/play/${gameID}`);
-      // }, 2000);
-      router.push(`/play/${gameID}`);
-    }
-
-    socket?.on('incoming-challenge', incomingChallengeHandler);
-    socket?.on('challenge-rejected', challengeRejectedHandler);
-    socket?.on('challenge-accepted', challengeAcceptedHandler);
-
-    return () => {
-      socket?.off('incoming-challenge', incomingChallengeHandler);
-      socket?.off('challenge-rejected', challengeRejectedHandler);
-      socket?.off('challenge-accepted', challengeAcceptedHandler);
-    }
-
-  }, [socket, router]);
+  const {incomingChallenges, acceptIncomingChallenge, rejectIncomingChallenge} = useChallenges();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -90,15 +28,12 @@ export default function IncomingChallenges() {
           </SheetTitle>
         </SheetHeader>
         <SheetDescription></SheetDescription>
-        {challenges.length === 0 && <NoChallenges />}
-        {challenges.map((e) => <Challenge key={e.fromUsername}
-          challengeDetails={{
-            fromUsername: e.fromUsername,
-            color: e.color,
-            time: e.time,
-            increment: e.increment
-          }}
-          remove={() => removeChallenge(e.fromUsername)} />)}
+        {incomingChallenges.length === 0 && <NoChallenges />}
+        {incomingChallenges.map((e) => <Challenge key={e.fromUsername}
+          challenge={e}
+          acceptIncomingChallenge={acceptIncomingChallenge}
+          rejectIncomingCHallenge={rejectIncomingChallenge}
+           />)}
       </SheetContent>
     </Sheet>
   )

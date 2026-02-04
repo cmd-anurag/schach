@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SocketProvider } from "@/context/SocketContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Preahvihear } from "next/font/google";
+import { ChallengeProvider } from "@/context/ChallengeContext";
 
 const preahvihear = Preahvihear({
   weight: "400",
@@ -27,10 +28,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <SocketProvider>
-            <main>
-              {children}
-            </main>
-            <Toaster richColors/>
+            <ChallengeProvider>
+              <main>
+                {children}
+              </main>
+            </ChallengeProvider>
+            <Toaster richColors />
           </SocketProvider>
         </AuthProvider>
       </body>

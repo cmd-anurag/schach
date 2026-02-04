@@ -1,30 +1,22 @@
 import { Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useSocket } from "@/hooks/useSocket"
-import { ChallengeColor } from "@/types/socketEvents";
+import { IncomingChallenge } from "@/context/ChallengeContext";
 
 type Props = {
-  challengeDetails: {
-    fromUsername: string,
-    color: ChallengeColor,
-    time: number,
-    increment: number,
-  },
-  remove: () => void,
+  challenge: IncomingChallenge,
+  acceptIncomingChallenge: (challenge: IncomingChallenge) => void,
+  rejectIncomingCHallenge: (challenge: IncomingChallenge) => void;
 }
 
-export default function Challenge({challengeDetails, remove} : Props) {
-  const {fromUsername, color, time, increment} = challengeDetails;
-  const {socket} = useSocket();
+export default function Challenge({challenge, acceptIncomingChallenge, rejectIncomingCHallenge} : Props) {
+  const {fromUsername, time, increment} = challenge;
 
   const challengeRejectHandler = () => {
-    socket?.emit('reject-challenge', {fromUsername})
-    remove();
+    rejectIncomingCHallenge(challenge);
   }
-
+  
   const challengeAcceptHandler = () => {
-    socket?.emit('accept-challenge', {fromUsername, color, time, increment});
-    remove();
+    acceptIncomingChallenge(challenge);
   }
 
   return (
